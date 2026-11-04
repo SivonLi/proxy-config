@@ -19,7 +19,27 @@ Stash 从完整 Clash 订阅中提取 `proxies`。机场提供的分组、规则
 
 地区分组通过节点名称识别中文地区名、英文名称、常见代码和旗帜。请在地区分组中确认机场节点已正确归类。Stash 会将没有匹配节点的空组视为 `DIRECT`，使用前需要确认所选地区包含机场节点；节点命名不符合规则时，需要调整相应 `filter`。
 
-全部 12 个策略组通过 `icon` 字段设置图标，格式符合 [Stash 策略组图标文档](https://stash.wiki/configuration/proxy-group-icon)。AI 使用 Apple 开发者网站的 Apple Intelligence 官方图标，Lark 和 Spotify 使用各自官方 App Store 图标；Apple 和 Microsoft 使用各自官方 GitHub 组织的品牌标志。默认代理、下载和地区旗帜图标来自 [Koolson/Qure](https://github.com/Koolson/Qure)。图标通过 HTTPS 加载。
+全部 12 个策略组使用仓库内的圆角方形 PNG。图标为 256 × 256 像素，统一白色底板、透明外边缘和标志区域，保留应用标志原色。配置通过 `icon` 字段引用图片，符合 [Stash 策略组图标文档](https://stash.wiki/configuration/proxy-group-icon)。
+
+## 图标集
+
+[一键导入 Stash 图标集](https://link.stash.ws/install-icon-set/raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/stash.json)。也可以在图标集导入页面填写此地址：
+
+```text
+https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/stash.json
+```
+
+[stash.json](icons/stash.json) 包含全部 12 个图标的名称和 HTTPS 地址，图片保存在 [icons/rounded](icons/rounded)。主配置已引用这些图片；更新主配置即可使用，导入图标集后也可以在其他配置中手动选择。导入链接依据 [Stash URL Schema 文档](https://stash.wiki/faq/url-schema)。
+
+AI 使用 Apple 开发者网站的 Apple Intelligence 图标，Lark 使用官方 App Store 图标。Spotify 使用[官方品牌资源](https://developer.spotify.com/documentation/design)中的标志，Apple 和 Microsoft 使用官方 GitHub 组织标志。默认代理、下载和地区旗帜来自 [Koolson/Qure](https://github.com/Koolson/Qure)，遵循来源署名与个人非商业使用要求。各品牌图标的权利归原权利人所有，完整下载地址见 [sources.json](icons/sources.json)。
+
+使用 ImageMagick 7 重新生成图标：
+
+```powershell
+pwsh -File stash/icons/build.ps1 -Magick magick
+```
+
+脚本使用 PowerShell 7 下载来源图片，等比例缩放到 176 × 176 像素区域，放置在 232 × 232 像素的白色圆角底板上。全部图片共用 52 像素圆角和 12 像素透明外边距。Spotify 取自官方资源中完整的圆形标志区域，裁剪位置记录在 `sources.json`。源文件缓存在 `.work/icon-sources/`，生成结果保存在 `icons/rounded/`。
 
 ## 分流行为
 
@@ -118,7 +138,7 @@ python stash/check_config.py --online --proxy http://127.0.0.1:7890
 
 2026-11-04 完成以下检查：
 
-- 7 项本地检查通过，涵盖主配置与覆写的 YAML 解析、重复键、分组引用、地区过滤表达式、DNS 加密、国内规则顺序和订阅参数声明。
+- 8 项本地检查通过，涵盖主配置与覆写的 YAML 解析、重复键、分组引用、地区过滤表达式、DNS 加密、国内规则顺序、订阅参数声明和图标集文件引用。
 - 全部上游均为 HTTPS DNS，两个 IPv6 解析开关关闭，53 端口提前拦截位于全部分流规则之前。
 - 23 个远程集合与 3 个 inline 集合验证通过，合计 12,918 条记录；规则类型、引用和 CIDR 格式检查通过。
 - 山姆的 `api-sams.walmartmobile.cn`、`decoration-sams.walmartmobile.cn` 通过国内 DoH 返回 `157.148.16.212`，属于 Sukka 中国 IP 集合。

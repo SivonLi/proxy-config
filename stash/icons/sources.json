@@ -1,0 +1,63 @@
+[
+  {
+    "id": "proxy",
+    "name": "默认代理",
+    "url": "https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Global.png"
+  },
+  {
+    "id": "apple-intelligence",
+    "name": "AI",
+    "url": "https://developer.apple.com/assets/elements/icons/apple-intelligence/apple-intelligence-256x256_2x.png"
+  },
+  {
+    "id": "lark",
+    "name": "Lark",
+    "url": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/39/f6/e6/39f6e646-f579-6dbc-af12-88f3a95c7900/AppIcon-0-0-1x_U007epad-0-0-0-1-0-0-85-220.png/512x512bb.png"
+  },
+  {
+    "id": "spotify",
+    "name": "Spotify",
+    "url": "https://developer-assets.spotifycdn.com/images/guidelines/design/icon1.svg",
+    "crop": "192x192+97+97"
+  },
+  {
+    "id": "apple",
+    "name": "Apple",
+    "url": "https://avatars.githubusercontent.com/u/10639145?s=512&v=4"
+  },
+  {
+    "id": "microsoft",
+    "name": "Microsoft",
+    "url": "https://avatars.githubusercontent.com/u/6154722?s=512&v=4"
+  },
+  {
+    "id": "download",
+    "name": "下载",
+    "url": "https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Download.png"
+  },
+  {
+    "id": "hong-kong",
+    "name": "香港",
+    "url": "https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Hong_Kong.png"
+  },
+  {
+    "id": "japan",
+    "name": "日本",
+    "url": "https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Japan.png"
+  },
+  {
+    "id": "united-states",
+    "name": "美国",
+    "url": "https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/United_States.png"
+  },
+  {
+    "id": "singapore",
+    "name": "新加坡",
+    "url": "https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Singapore.png"
+  },
+  {
+    "id": "taiwan",
+    "name": "台湾",
+    "url": "https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Taiwan.png"
+  }
+]

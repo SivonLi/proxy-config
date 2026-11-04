@@ -26,6 +26,24 @@ CF_DOH = "https://1.1.1.1/dns-query"
 
 
 class ConfigTests(unittest.TestCase):
+    def test_icon_set(self):
+        icon_set = json.loads((ROOT / "icons/stash.json").read_text(encoding="utf-8"))
+        sources = json.loads((ROOT / "icons/sources.json").read_text(encoding="utf-8"))
+        self.assertTrue(icon_set["name"])
+        self.assertTrue(icon_set["description"])
+        icons = {item["name"]: item["url"] for item in icon_set["icons"]}
+        self.assertEqual(len(icons), len(icon_set["icons"]))
+        self.assertEqual(icons, {group["name"]: group["icon"] for group in CONFIG["proxy-groups"]})
+        self.assertEqual(set(icons), {source["name"] for source in sources})
+        base_url = "https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/"
+        expected_files = {source["id"] + ".png" for source in sources}
+        self.assertEqual(expected_files, {path.name for path in (ROOT / "icons/rounded").glob("*.png")})
+        for source in sources:
+            filename = source["id"] + ".png"
+            self.assertEqual(icons[source["name"]], base_url + filename)
+            self.assertGreater((ROOT / "icons/rounded" / filename).stat().st_size, 0)
+            self.assertEqual(urlsplit(source["url"]).scheme, "https")
+
     def test_domestic_address_lookup(self):
         self.assertEqual(CONFIG["dns"]["nameserver"], [ALI_DOH])
         lookup = RULES.index(["RULE-SET", "lan-ip", "DIRECT"])

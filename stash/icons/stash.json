@@ -1,0 +1,54 @@
+{
+  "name": "Sivon Stash 圆角图标",
+  "description": "12 个策略组图标，统一圆角方形；应用使用官方标志，AI 使用 Apple Intelligence。",
+  "icons": [
+    {
+      "name": "默认代理",
+      "url": "https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/proxy.png"
+    },
+    {
+      "name": "AI",
+      "url": "https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/apple-intelligence.png"
+    },
+    {
+      "name": "Lark",
+      "url": "https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/lark.png"
+    },
+    {
+      "name": "Spotify",
+      "url": "https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/spotify.png"
+    },
+    {
+      "name": "Apple",
+      "url": "https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/apple.png"
+    },
+    {
+      "name": "Microsoft",
+      "url": "https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/microsoft.png"
+    },
+    {
+      "name": "下载",
+      "url": "https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/download.png"
+    },
+    {
+      "name": "香港",
+      "url": "https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/hong-kong.png"
+    },
+    {
+      "name": "日本",
+      "url": "https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/japan.png"
+    },
+    {
+      "name": "美国",
+      "url": "https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/united-states.png"
+    },
+    {
+      "name": "新加坡",
+      "url": "https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/singapore.png"
+    },
+    {
+      "name": "台湾",
+      "url": "https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/taiwan.png"
+    }
+  ]
+}

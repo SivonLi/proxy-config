@@ -39,49 +39,49 @@ proxy-providers:
 proxy-groups:
   - name: 默认代理
     type: select
-    icon: https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Global.png
+    icon: https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/proxy.png
     proxies: [香港, 日本, 美国, 新加坡, 台湾]
     interval: -1
     lazy: true
   - name: AI
     type: select
-    icon: https://developer.apple.com/assets/elements/icons/apple-intelligence/apple-intelligence-256x256_2x.png
+    icon: https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/apple-intelligence.png
     proxies: [美国, 日本, 新加坡, 台湾]
     interval: -1
     lazy: true
   - name: Lark
     type: select
-    icon: https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/39/f6/e6/39f6e646-f579-6dbc-af12-88f3a95c7900/AppIcon-0-0-1x_U007epad-0-0-0-1-0-0-85-220.png/100x100bb.jpg
+    icon: https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/lark.png
     proxies: [日本, 香港, 美国, 新加坡, 台湾]
     interval: -1
     lazy: true
   - name: Spotify
     type: select
-    icon: https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/8b/f2/6a/8bf26ab9-3ced-cb5c-a2b3-19f65e7f5cc6/AppIcon-0-0-1x_U007epad-0-1-0-0-85-220.png/100x100bb.jpg
+    icon: https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/spotify.png
     proxies: [默认代理, 香港, 日本, 美国, 新加坡, 台湾]
     interval: -1
     lazy: true
   - name: Apple
     type: select
-    icon: https://avatars.githubusercontent.com/u/10639145?s=128&v=4
+    icon: https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/apple.png
     proxies: [DIRECT, 香港, 日本, 美国, 新加坡, 台湾]
     interval: -1
     lazy: true
   - name: Microsoft
     type: select
-    icon: https://avatars.githubusercontent.com/u/6154722?s=128&v=4
+    icon: https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/microsoft.png
     proxies: [DIRECT, 香港, 日本, 美国, 新加坡, 台湾]
     interval: -1
     lazy: true
   - name: 下载
     type: select
-    icon: https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Download.png
+    icon: https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/download.png
     proxies: [香港, 日本, 美国, 新加坡, 台湾, DIRECT]
     interval: -1
     lazy: true
   - name: 香港
     type: url-test
-    icon: https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Hong_Kong.png
+    icon: https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/hong-kong.png
     use: [airport]
     filter: '(?i)🇭🇰|香港|(^|[^a-z])hkg?([^a-z]|$)|hong[ -]*kong'
     interval: 600
@@ -89,7 +89,7 @@ proxy-groups:
     lazy: true
   - name: 日本
     type: url-test
-    icon: https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Japan.png
+    icon: https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/japan.png
     use: [airport]
     filter: '(?i)🇯🇵|日本|东京|東京|大阪|京都|(^|[^a-z])jpn?([^a-z]|$)|japan|tokyo|osaka'
     interval: 600
@@ -97,7 +97,7 @@ proxy-groups:
     lazy: true
   - name: 美国
     type: url-test
-    icon: https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/United_States.png
+    icon: https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/united-states.png
     use: [airport]
     filter: '(?i)🇺🇸|美国|美國|纽约|紐約|洛杉矶|洛杉磯|旧金山|舊金山|西雅图|西雅圖|(^|[^a-z])usa?([^a-z]|$)|america|united[ -]*states'
     interval: 600
@@ -105,7 +105,7 @@ proxy-groups:
     lazy: true
   - name: 新加坡
     type: url-test
-    icon: https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Singapore.png
+    icon: https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/singapore.png
     use: [airport]
     filter: '(?i)🇸🇬|新加坡|狮城|獅城|(^|[^a-z])sgp?([^a-z]|$)|singapore'
     interval: 600
@@ -113,7 +113,7 @@ proxy-groups:
     lazy: true
   - name: 台湾
     type: url-test
-    icon: https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Taiwan.png
+    icon: https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/taiwan.png
     use: [airport]
     filter: '(?i)🇹🇼|台湾|台灣|臺灣|台北|臺北|高雄|(^|[^a-z])twn?([^a-z]|$)|taiwan'
     interval: 600
