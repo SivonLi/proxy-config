@@ -19,6 +19,8 @@ Stash 从完整 Clash 订阅中提取 `proxies`。机场提供的分组、规则
 
 地区分组通过节点名称识别中文地区名、英文名称、常见代码和旗帜。请在地区分组中确认机场节点已正确归类。Stash 会将没有匹配节点的空组视为 `DIRECT`，使用前需要确认所选地区包含机场节点；节点命名不符合规则时，需要调整相应 `filter`。
 
+全部 12 个策略组通过 `icon` 字段设置图标，格式符合 [Stash 策略组图标文档](https://stash.wiki/configuration/proxy-group-icon)。AI 使用 Apple 开发者网站的 Apple Intelligence 官方图标，Lark 和 Spotify 使用各自官方 App Store 图标；Apple 和 Microsoft 使用各自官方 GitHub 组织的品牌标志。默认代理、下载和地区旗帜图标来自 [Koolson/Qure](https://github.com/Koolson/Qure)。图标通过 HTTPS 加载。
+
 ## 分流行为
 
 通用规则使用 [SukkaW/Surge](https://github.com/SukkaW/Surge) 发布的 Clash 格式文件。
