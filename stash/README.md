@@ -65,6 +65,8 @@ pwsh -File stash/icons/build.ps1 -Magick magick
 
 未命中域名规则的连接进入 IP 规则阶段。首个局域网 IP 集合允许触发真实地址解析，后续服务 IP 集合复用解析结果。中国 IPv4、IPv6 集合允许解析，命中中国地址时直连，其余连接使用默认代理。公共 CDN 根据服务域名和地址采用相同的分流逻辑。
 
+已命中代理域名规则的 TCP 连接直接交给所选节点，不进入后面的中国 IP 判断。域名集合尚未收录的国内服务通过国内 DoH 获取地址，再由中国 IP 集合判断是否直连。真实解析对这部分连接仍然必要，不能给全部 IP 规则统一添加 `no-resolve`。
+
 明确指定代理的 Lark、AI、流媒体、Telegram、下载和境外服务域名，按各自规则访问。域名集合、地址归属数据和服务部署都可能变化，这套规则无法保证所有中国应用的每个请求都直连。
 
 Lark 集合使用[官方防火墙域名清单](https://www.larksuite.com/hc/en-US/articles/360044784554-configure-organization-firewall-domain-and-ip-allowlist)中的 6 个专用域名，覆盖 `larksuite.com`、`larksuite-us.com`、`larksuitecdn.com`、`larksuitepkg.com`、`larkenterprise.com` 和 `baseopendevx.com` 及其子域名。集合优先于通用服务规则，随本配置维护。其他共享服务域名和直接访问 IP 的连接继续按通用规则处理。
@@ -77,23 +79,25 @@ Sukka 的 `direct` 集合包含 macOS 下载工具等程序的 `PROCESS-NAME` �
 
 ## DNS 与接管范围
 
-配置利用 Stash 3.6 / macOS 4.3 新增的加密 Bootstrap、独立节点 DNS 和 DNS 引用规则集合功能。具体语义见 [Stash DNS 文档](https://stash.wiki/features/dns-server)。
+配置使用 Stash 默认的 Fake-IP、加密 Bootstrap 和独立节点 DNS。内置 DNS 的 `nameserver`、`default-nameserver` 和 `proxy-server-nameserver` 均使用 `https://223.5.5.5/dns-query`。`follow-rule: false` 让这些查询直接出站，减少 DNS 请求进入分流引擎的处理。具体语义见 [Stash DNS 文档](https://stash.wiki/features/dns-server)。
 
-| 查询用途 | 上游 | 出口 |
+| 查询用途 | 解析方式 | 出口 |
 | --- | --- | --- |
-| 机场节点域名、DNS Bootstrap | `https://223.5.5.5/dns-query` | 独立直连通道 |
-| 国内域名、Apple 服务、Microsoft 服务、直连集合域名 | `https://223.5.5.5/dns-query` | DIRECT |
-| Lark、AI、Apple Intelligence、Spotify、其他流媒体、Telegram、Sukka 境外服务集合 | `https://1.1.1.1/dns-query` | 默认代理 |
-| 尚未收录的域名 | `https://223.5.5.5/dns-query` | DIRECT |
-| 局域网集合中的域名 | `https://223.5.5.5/dns-query` | DIRECT |
+| 机场节点域名、DNS Bootstrap | 阿里 DoH | 独立直连通道 |
+| 需要直连的服务、局域网真实解析 | 阿里 DoH | DIRECT |
+| 未命中域名规则、需要判断 IP 的连接 | 阿里 DoH | DIRECT |
+| 命中代理域名规则的 TCP 连接 | 将目标域名交给代理节点解析 | 对应策略组最终选中的节点 |
+| UDP 代理连接的目标域名 | Stash 经代理查询，默认使用 `1.0.0.1` | 对应代理节点 |
 
-Lark、AI、Apple Intelligence 和 Spotify 的 DNS 集合优先于 Apple、Microsoft 集合，Apple、Microsoft 集合优先于通用流媒体集合。国内域名集合优先于通用境外服务集合。未收录域名使用国内 DoH，以获取适合国内直连的 CDN 地址。该解析服务可以看到这些查询，未知境外域名也属于这个范围。
+Fake-IP 把应用得到的地址与目标域名关联起来。对于支持域名转发的代理 TCP 连接，节点使用自己的 DNS 解析目标，让 CDN 按代理出口调度。Lark 选择日本、AI 选择美国时，各自通过对应节点解析和访问。Apple、Microsoft 或下载选择 `DIRECT` 时，使用国内 DoH 获取适合本地出口的地址。原理参考 [Sukka 关于 DNS、CDN 与 Fake-IP 的文章](https://blog.skk.moe/post/lets-talk-about-dns-cdn-fake-ip/)，Stash 官方也在[性能建议](https://stash.wiki/faq/effective-stash)中推荐中国用户使用国内 DNS。
 
-DNS 服务器使用 IP 地址，节点 DNS 使用独立通道，连接代理时不会依赖已经建立的代理连接。
+IP 规则阶段得到的地址用于判断出口。使用支持域名转发的 TCP 代理时，最终仍交给节点解析目标。DNS 服务器使用 IP 地址，机场节点域名通过独立通道解析，启动代理不依赖已经建立的代理连接。
 
-Stash 管理的全部上游查询使用 DoH，包括节点域名、Bootstrap 和局域网域名。配置中没有系统 DNS、明文 DNS 或明文回退。国内解析服务可以看到分配给它的查询，机场节点端的域名解析由机场控制。
+内置 DNS 的上述上游查询均使用 DoH，保持 TLS 证书校验。国内解析服务可以看到直连域名、节点域名和需要判断 IP 的未知域名查询。未知境外域名也可能进入 IP 判断阶段。机场节点端的 DNS 由机场控制。
 
-规则首条为 `DST-PORT,53,REJECT,pre-matching`，阻止进入 Stash 分流引擎的 TCP、UDP 53 端口连接，覆盖 IPv4 和 IPv6。`pre-matching` 是 3.7 新增的提前拒绝选项：iOS 在读取连接数据前拒绝，UDP 在首个数据包阶段拒绝，从而减少连接处理。已交给 Stash 内置 DNS 服务处理的查询，使用上述 DoH 上游。选项语义与支持的规则类型见 [规则类型文档](https://stash.wiki/rules/rule-types)。
+**UDP 代理解析有独立限制。** 根据 [Stash 协议文档](https://stash.wiki/proxy-protocols/proxy-types)，Stash 转发 UDP 时需要目标 IP，会通过代理发起 DNS 查询；`udp-nameserver` 仅支持 UDP。使用加密代理时，本机到节点这一段由代理保护，节点到 DNS 服务器这一段仍可能使用明文 UDP 53。`dns.nameserver` 中的 DoH 无法保证这一段也加密。WireGuard、MASQUE 等隧道协议还有各自的 DNS 配置，使用此类机场节点时需要单独核查。
+
+规则首条为 `DST-PORT,53,REJECT,pre-matching`，阻止进入 Stash 分流引擎的 TCP、UDP 53 端口连接，覆盖 IPv4 和 IPv6。`pre-matching` 是 3.7 新增的提前拒绝选项：iOS 在读取连接数据前拒绝，UDP 在首个数据包阶段拒绝，从而减少连接处理。已交给 Stash 内置 DNS 服务处理的查询，使用上述 DoH 上游。这条规则的控制范围是进入分流引擎的连接，不包括机场服务器自己的 DNS 请求。选项语义与支持的规则类型见 [规则类型文档](https://stash.wiki/rules/rule-types)。
 
 提前拒绝的请求不会出现在连接列表中。核心日志按目标限制记录频率；需要确认匹配阶段时，可使用 [HTTP API](https://stash.wiki/features/http-api) 的 `/rules/match` 查看 `stage` 字段。
 
@@ -101,7 +105,9 @@ Stash 管理的全部上游查询使用 DoH，包括节点域名、Bootstrap 和
 
 顶层 `ipv6: false` 让 Stash 自身只解析 IPv4，`dns.ipv6: false` 让应用 DNS 查询不返回 AAAA 记录。这两个设置控制 DNS 解析，直接访问 IPv6 地址的流量仍需要 Tunnel IPv6 路由接管。
 
-Stash 默认使用 Fake-IP，局域网集合返回真实地址。已命中代理域名规则的连接可以交给节点解析。未命中域名规则的连接需要一次真实地址查询，供 IP 规则判断。配置没有开启并发回退 DNS。
+Fake-IP 的真实地址例外只包含局域网集合。每种本地 DNS 用途配置一个上游，由 Stash 管理缓存和后台刷新。Stash 自带乐观 DNS 缓存，缓存过期时继续使用已有结果，并在后台更新。
+
+DNS 出口检测网站展示的是递归 DNS 访问权威 DNS 时的出口。出现国内解析器与本配置的国内直连、未知域名 IP 判断可以一致，单凭这个结果无法判定设备发生了明文 DNS 泄漏。检查时需要结合目标域名、命中规则、实际代理节点，以及设备是否向外发送了明文 53 端口请求。
 
 **还需要完成 Stash 界面设置：**
 
@@ -134,17 +140,16 @@ python stash/check_config.py
 python stash/check_config.py --online --proxy http://127.0.0.1:7890
 ```
 
-`--proxy` 用于下载公开规则和访问境外 DoH。国内 DoH 检查不指定 HTTP 代理。代理端口按本机配置填写。联网检查会访问真实公开服务；解析结果变化时，脚本直接报告失败。
+`--proxy` 仅用于下载公开规则，DoH 检查不指定 HTTP 代理。代理端口按本机配置填写。联网检查会访问真实公开服务；解析结果变化时，脚本直接报告失败。
 
 2026-11-04 完成以下检查：
 
-- 9 项本地检查通过，涵盖主配置与覆写的 YAML 解析、重复键、分组引用、地区过滤表达式、DNS 加密、国内规则顺序、订阅参数声明、图标集文件引用和图片颜色与圆角轮廓。
-- 全部上游均为 HTTPS DNS，两个 IPv6 解析开关关闭，53 端口提前拦截位于全部分流规则之前。
-- 23 个远程集合与 3 个 inline 集合验证通过，合计 12,918 条记录；规则类型、引用和 CIDR 格式检查通过。
+- 10 项本地检查通过，涵盖主配置与覆写的 YAML 解析、重复键、分组引用、地区过滤表达式、内置 DNS 加密、Fake-IP 例外、域名与 IP 规则顺序、订阅参数声明和图标集。
+- 内置 DNS 的全部上游均为 HTTPS DNS，`follow-rule` 关闭，两个 IPv6 解析开关关闭，53 端口提前拦截位于全部分流规则之前。
+- 23 个远程集合与 3 个 inline 集合验证通过，合计 12,918 条记录；规则类型、引用和 CIDR 格式检查通过。`non_ip` 集合中附带的 IP 条目均包含 `no-resolve`，不会自行触发域名解析。
 - 山姆的 `api-sams.walmartmobile.cn`、`decoration-sams.walmartmobile.cn` 通过国内 DoH 返回 `157.148.16.212`，属于 Sukka 中国 IP 集合。
 - 万达的 `cinema-api-prd-mx.wandafilm.com`、`misc-api-prd-mx.wandafilm.com` 通过国内 DoH 返回 `120.53.82.119`，属于 Sukka 中国 IP 集合。
-- `223.5.5.5` 在不指定 HTTP 代理时返回有效的 DoH 答案。
-- `1.1.1.1` 经现有 Windows HTTP 代理返回有效的 DoH 答案，验证过程没有关闭 TLS 证书校验。
+- `223.5.5.5` 在不指定 HTTP 代理时，为 8 个业务域名返回有效的 DoH 答案，验证过程保持 TLS 证书校验。
 
 上述请求验证了上游服务的可用性。Windows 上的连接路径受当前系统网络设置影响，没有执行 Stash 的实际 DNS 规则。
 

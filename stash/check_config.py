@@ -23,7 +23,6 @@ AIRPORT_OVERRIDE = YAML(typ="safe").load(ROOT / "airport.stoverride")
 RULES = list(csv.reader(CONFIG["rules"]))
 PROVIDERS = CONFIG["rule-providers"]
 ALI_DOH = "https://223.5.5.5/dns-query"
-CF_DOH = "https://1.1.1.1/dns-query"
 
 
 class ConfigTests(unittest.TestCase):
@@ -76,13 +75,28 @@ class ConfigTests(unittest.TestCase):
             self.assertLess(RULES.index(rule), RULES.index(["MATCH", "默认代理"]))
 
     def test_domestic_precedence(self):
-        domestic = RULES.index(["RULE-SET", "domestic", "DIRECT"])
-        for name in ["cdn", "cdn-domain", "global"]:
-            if name in PROVIDERS:
-                self.assertLess(domestic, RULES.index(["RULE-SET", name, "默认代理"]))
-        policy = list(CONFIG["dns"]["nameserver-policy"])
-        self.assertLess(policy.index("rule-set:direct,domestic"), policy.index("rule-set:global"))
-        self.assertEqual(CONFIG["dns"]["nameserver-policy"]["rule-set:global"], CF_DOH)
+        for name in ["direct", "domestic"]:
+            self.assertLess(RULES.index(["RULE-SET", name, "DIRECT"]),
+                            RULES.index(["RULE-SET", "global", "默认代理"]))
+
+    def test_fake_ip_resolution_path(self):
+        self.assertEqual(CONFIG["dns"]["fake-ip-filter"], ["rule-set:lan"])
+        self.assertFalse(CONFIG["dns"].get("nameserver-policy"))
+        ip_phase = False
+        for rule in RULES:
+            if rule[0] == "RULE-SET":
+                provider = PROVIDERS[rule[1]]
+                is_ip = (provider["behavior"] == "ipcidr"
+                         or "/Clash/ip/" in urlsplit(provider.get("url", "")).path)
+                if is_ip:
+                    ip_phase = True
+                else:
+                    self.assertFalse(ip_phase, rule)
+            elif rule[0] in {"IP-CIDR", "IP-CIDR6", "IP-ASN", "GEOIP"}:
+                ip_phase = True
+            elif rule[0].startswith("DOMAIN"):
+                self.assertFalse(ip_phase, rule)
+        self.assertTrue(ip_phase)
 
     def test_ruleset_sources(self):
         inline = {name for name, provider in PROVIDERS.items() if provider.get("type") == "inline"}
@@ -126,15 +140,15 @@ class ConfigTests(unittest.TestCase):
                 self.assertEqual(group["interval"], -1)
         list(TopologicalSorter(graph).static_order())
 
-    def test_dns_encryption(self):
+    def test_builtin_dns_encryption(self):
         settings = CONFIG["dns"]
         self.assertFalse(CONFIG["ipv6"])
         self.assertFalse(settings["ipv6"])
-        self.assertTrue(settings["follow-rule"])
+        self.assertFalse(settings["follow-rule"])
         self.assertNotIn("fallback", settings)
         self.assertEqual(RULES[0], ["DST-PORT", "53", "REJECT", "pre-matching"])
         self.assertEqual([rule for rule in RULES if "pre-matching" in rule], [RULES[0]])
-        endpoints = list(settings["nameserver-policy"].values())
+        endpoints = []
         for field in ["nameserver", "default-nameserver", "proxy-server-nameserver"]:
             self.assertEqual(len(settings[field]), 1)
             endpoints.extend(settings[field])
@@ -143,8 +157,6 @@ class ConfigTests(unittest.TestCase):
             self.assertEqual(address.scheme, "https")
             self.assertIn(address.port, {None, 443})
             ipaddress.ip_address(address.hostname)
-        self.assertIn(["IP-CIDR", "1.1.1.1/32", "默认代理", "no-resolve"], RULES)
-        self.assertIn(["IP-CIDR", "223.5.5.5/32", "DIRECT", "no-resolve"], RULES)
 
     def test_private_subscription_parameter(self):
         self.assertEqual(AIRPORT_OVERRIDE["arguments-version"], 1)
@@ -173,9 +185,6 @@ class ConfigTests(unittest.TestCase):
             if rule[0] == "IP-CIDR":
                 ipaddress.ip_network(rule[1])
         self.assertEqual(used, set(PROVIDERS))
-        for selector in CONFIG["dns"]["nameserver-policy"]:
-            self.assertTrue(selector.startswith("rule-set:"))
-            self.assertTrue(set(next(csv.reader([selector.removeprefix("rule-set:")]))) <= used)
         for name in ["stream", "telegram"]:
             self.assertIn(["RULE-SET", name, "默认代理"], RULES)
         for name, target in [("lark", "Lark"), ("spotify", "Spotify"),
@@ -185,13 +194,6 @@ class ConfigTests(unittest.TestCase):
         lark = RULES.index(["RULE-SET", "lark", "Lark"])
         for name, target in [("download-domain", "下载"), ("domestic", "DIRECT"), ("global", "默认代理")]:
             self.assertLess(lark, RULES.index(["RULE-SET", name, target]))
-        policies = CONFIG["dns"]["nameserver-policy"]
-        lark_policy = next(
-            key for key in policies
-            if "lark" in next(csv.reader([key.removeprefix("rule-set:")]))
-        )
-        self.assertEqual(policies[lark_policy], CF_DOH)
-        self.assertLess(list(policies).index(lark_policy), list(policies).index("rule-set:direct,domestic"))
 
 
 def fetch_provider(item, proxies):
@@ -213,7 +215,12 @@ def fetch_provider(item, proxies):
         assert all("," not in entry for entry in entries), name
     else:
         allowed = {"DOMAIN", "DOMAIN-SUFFIX", "DOMAIN-KEYWORD", "DOMAIN-WILDCARD", "PROCESS-NAME", "IP-CIDR", "IP-CIDR6", "IP-ASN"}
-        assert {row[0] for row in csv.reader(entries)} <= allowed, name
+        rows = list(csv.reader(entries))
+        types = {row[0] for row in rows}
+        assert types <= allowed, name
+        if "/Clash/non_ip/" in urlsplit(provider["url"]).path:
+            assert all(row[0] not in {"IP-CIDR", "IP-CIDR6", "IP-ASN"}
+                       or "no-resolve" in row[2:] for row in rows), name
     return name, entries
 
 
@@ -243,8 +250,6 @@ def check_online(proxy):
                "m.wandacinemas.com", "www.ruyifilm.com", "statici.icloud.com"]
     with ThreadPoolExecutor(max_workers=4) as executor:
         answers = list(executor.map(lambda domain: query_doh(ALI_DOH, domain, {}), domains))
-    answers.append(query_doh(CF_DOH, "www.wikipedia.org", proxies))
-    answers.append(query_doh(CF_DOH, "www.larksuite.com", proxies))
     required_domains = {"api-sams.walmartmobile.cn", "decoration-sams.walmartmobile.cn",
                         "cinema-api-prd-mx.wandafilm.com", "misc-api-prd-mx.wandafilm.com"}
     for domain, addresses in answers:
@@ -259,7 +264,7 @@ def check_online(proxy):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--online", action="store_true", help="下载真实规则并检查 DoH 服务")
-    parser.add_argument("--proxy", help="下载规则和检查境外 DoH 时使用的 HTTP 代理")
+    parser.add_argument("--proxy", help="下载公开规则时使用的 HTTP 代理；DoH 检查保持直连")
     args = parser.parse_args()
     result = unittest.TextTestRunner(verbosity=2).run(unittest.defaultTestLoader.loadTestsFromTestCase(ConfigTests))
     if not result.wasSuccessful():
