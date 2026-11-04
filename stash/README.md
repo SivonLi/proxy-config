@@ -7,7 +7,7 @@
 1. 将 `stash.yaml` 导入 Stash，作为主配置。
 2. 在覆写页面导入 [airport.stoverride](airport.stoverride)，打开“参数”，填写机场的完整 HTTPS Clash 订阅地址，保存并启用覆写。启动 Stash，机场订阅和规则首次下载成功后，进入策略页面。
 3. 在“默认代理”手动选择香港、日本、美国、新加坡或台湾，初始地区为香港。
-4. AI 初始选择美国，可选日本、新加坡和台湾。Spotify 初始选择“默认代理”，也可以独立选择地区。Apple 和 Microsoft 初始选择 `DIRECT`，也可以选择地区。下载初始选择香港，可手动选择 `DIRECT`。地区分组根据测速结果自动选择节点。
+4. AI 初始选择美国，可选日本、新加坡和台湾。Lark 初始选择日本，可选香港、美国、新加坡和台湾。Spotify 初始选择“默认代理”，也可以独立选择地区。Apple 和 Microsoft 初始选择 `DIRECT`，也可以选择地区。下载初始选择香港，可手动选择 `DIRECT`。地区分组根据测速结果自动选择节点。
 
 覆写只修改 `proxy-providers.airport.url`。订阅参数为必填项，每台设备分别填写；更新覆写会保留本设备的参数，分享或导出覆写只包含原始模板。参数用法见 [Stash 覆写文档](https://stash.wiki/configuration/override)。更新主配置时，继续启用此覆写即可使用已填写的订阅。
 
@@ -21,12 +21,13 @@ Stash 从完整 Clash 订阅中提取 `proxies`。机场提供的分组、规则
 
 ## 分流行为
 
-规则使用 [SukkaW/Surge](https://github.com/SukkaW/Surge) 发布的 Clash 格式文件。
+通用规则使用 [SukkaW/Surge](https://github.com/SukkaW/Surge) 发布的 Clash 格式文件。
 
 | 流量 | 默认出口 |
 | --- | --- |
 | 局域网域名与私有地址 | DIRECT |
 | AI 与 Apple Intelligence | AI，初始选择美国 |
+| Lark 专用服务域名 | Lark，初始选择日本 |
 | Spotify | Spotify，初始使用默认代理 |
 | 其他流媒体 | 默认代理 |
 | Telegram | 默认代理 |
@@ -42,7 +43,9 @@ Stash 从完整 Clash 订阅中提取 `proxies`。机场提供的分组、规则
 
 未命中域名规则的连接进入 IP 规则阶段。首个局域网 IP 集合允许触发真实地址解析，后续服务 IP 集合复用解析结果。中国 IPv4、IPv6 集合允许解析，命中中国地址时直连，其余连接使用默认代理。公共 CDN 根据服务域名和地址采用相同的分流逻辑。
 
-明确指定代理的 AI、流媒体、Telegram、下载和境外服务域名，按各自规则访问。域名集合、地址归属数据和服务部署都可能变化，这套规则无法保证所有中国应用的每个请求都直连。
+明确指定代理的 Lark、AI、流媒体、Telegram、下载和境外服务域名，按各自规则访问。域名集合、地址归属数据和服务部署都可能变化，这套规则无法保证所有中国应用的每个请求都直连。
+
+Lark 集合使用[官方防火墙域名清单](https://www.larksuite.com/hc/en-US/articles/360044784554-configure-organization-firewall-domain-and-ip-allowlist)中的 6 个专用域名，覆盖 `larksuite.com`、`larksuite-us.com`、`larksuitecdn.com`、`larksuitepkg.com`、`larkenterprise.com` 和 `baseopendevx.com` 及其子域名。集合优先于通用服务规则，随本配置维护。其他共享服务域名和直接访问 IP 的连接继续按通用规则处理。
 
 Spotify 的 17 个域名、1 个关键词和 1 个 IP 条目来自 [Sukka 的 Spotify 定义](https://github.com/SukkaW/Surge/blob/master/Source/stream.ts#L630)。域名和 IP 使用 Stash inline 集合，关键词使用单独规则，均优先于通用流媒体集合。内嵌条目随本配置维护。Apple 和 Microsoft 规则优先于通用流媒体集合，Apple Intelligence 使用 AI 分组。
 
@@ -58,11 +61,11 @@ Sukka 的 `direct` 集合包含 macOS 下载工具等程序的 `PROCESS-NAME` �
 | --- | --- | --- |
 | 机场节点域名、DNS Bootstrap | `https://223.5.5.5/dns-query` | 独立直连通道 |
 | 国内域名、Apple 服务、Microsoft 服务、直连集合域名 | `https://223.5.5.5/dns-query` | DIRECT |
-| AI、Apple Intelligence、Spotify、其他流媒体、Telegram、Sukka 境外服务集合 | `https://1.1.1.1/dns-query` | 默认代理 |
+| Lark、AI、Apple Intelligence、Spotify、其他流媒体、Telegram、Sukka 境外服务集合 | `https://1.1.1.1/dns-query` | 默认代理 |
 | 尚未收录的域名 | `https://223.5.5.5/dns-query` | DIRECT |
 | 局域网集合中的域名 | `https://223.5.5.5/dns-query` | DIRECT |
 
-AI、Apple Intelligence 和 Spotify 的 DNS 集合优先于 Apple、Microsoft 集合，Apple、Microsoft 集合优先于通用流媒体集合。国内域名集合优先于通用境外服务集合。未收录域名使用国内 DoH，以获取适合国内直连的 CDN 地址。该解析服务可以看到这些查询，未知境外域名也属于这个范围。
+Lark、AI、Apple Intelligence 和 Spotify 的 DNS 集合优先于 Apple、Microsoft 集合，Apple、Microsoft 集合优先于通用流媒体集合。国内域名集合优先于通用境外服务集合。未收录域名使用国内 DoH，以获取适合国内直连的 CDN 地址。该解析服务可以看到这些查询，未知境外域名也属于这个范围。
 
 DNS 服务器使用 IP 地址，节点 DNS 使用独立通道，连接代理时不会依赖已经建立的代理连接。
 
@@ -115,7 +118,7 @@ python stash/check_config.py --online --proxy http://127.0.0.1:7890
 
 - 7 项本地检查通过，涵盖主配置与覆写的 YAML 解析、重复键、分组引用、地区过滤表达式、DNS 加密、国内规则顺序和订阅参数声明。
 - 全部上游均为 HTTPS DNS，两个 IPv6 解析开关关闭，53 端口提前拦截位于全部分流规则之前。
-- 23 个远程集合与 2 个 inline 集合验证通过，合计 12,912 条记录；规则类型、引用和 CIDR 格式检查通过。
+- 23 个远程集合与 3 个 inline 集合验证通过，合计 12,918 条记录；规则类型、引用和 CIDR 格式检查通过。
 - 山姆的 `api-sams.walmartmobile.cn`、`decoration-sams.walmartmobile.cn` 通过国内 DoH 返回 `157.148.16.212`，属于 Sukka 中国 IP 集合。
 - 万达的 `cinema-api-prd-mx.wandafilm.com`、`misc-api-prd-mx.wandafilm.com` 通过国内 DoH 返回 `120.53.82.119`，属于 Sukka 中国 IP 集合。
 - `223.5.5.5` 在不指定 HTTP 代理时返回有效的 DoH 答案。

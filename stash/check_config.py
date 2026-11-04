@@ -47,7 +47,7 @@ class ConfigTests(unittest.TestCase):
 
     def test_ruleset_sources(self):
         inline = {name for name, provider in PROVIDERS.items() if provider.get("type") == "inline"}
-        self.assertEqual(inline, {"spotify", "spotify-ip"})
+        self.assertEqual(inline, {"lark", "spotify", "spotify-ip"})
         for name, provider in PROVIDERS.items():
             if name not in inline:
                 self.assertEqual(urlsplit(provider["url"]).hostname, "ruleset.skk.moe")
@@ -62,6 +62,8 @@ class ConfigTests(unittest.TestCase):
         self.assertEqual(set(groups["下载"]["proxies"]), regions | {"DIRECT"})
         self.assertEqual(groups["下载"]["proxies"][0], "香港")
         self.assertEqual(set(groups["AI"]["proxies"]), regions - {"香港"})
+        self.assertEqual(set(groups["Lark"]["proxies"]), regions)
+        self.assertEqual(groups["Lark"]["proxies"][0], "日本")
         self.assertEqual(groups["Spotify"]["proxies"][0], "默认代理")
         self.assertEqual(set(groups["Spotify"]["proxies"]), regions | {"默认代理"})
         for name in ["Apple", "Microsoft"]:
@@ -137,9 +139,20 @@ class ConfigTests(unittest.TestCase):
             self.assertTrue(set(next(csv.reader([selector.removeprefix("rule-set:")]))) <= used)
         for name in ["stream", "telegram"]:
             self.assertIn(["RULE-SET", name, "默认代理"], RULES)
-        for name, target in [("spotify", "Spotify"), ("apple-services", "Apple"), ("apple-cn", "DIRECT")]:
+        for name, target in [("lark", "Lark"), ("spotify", "Spotify"),
+                             ("apple-services", "Apple"), ("apple-cn", "DIRECT")]:
             self.assertLess(RULES.index(["RULE-SET", name, target]),
                             RULES.index(["RULE-SET", "stream", "默认代理"]))
+        lark = RULES.index(["RULE-SET", "lark", "Lark"])
+        for name, target in [("download-domain", "下载"), ("domestic", "DIRECT"), ("global", "默认代理")]:
+            self.assertLess(lark, RULES.index(["RULE-SET", name, target]))
+        policies = CONFIG["dns"]["nameserver-policy"]
+        lark_policy = next(
+            key for key in policies
+            if "lark" in next(csv.reader([key.removeprefix("rule-set:")]))
+        )
+        self.assertEqual(policies[lark_policy], CF_DOH)
+        self.assertLess(list(policies).index(lark_policy), list(policies).index("rule-set:direct,domestic"))
 
 
 def fetch_provider(item, proxies):
@@ -192,6 +205,7 @@ def check_online(proxy):
     with ThreadPoolExecutor(max_workers=4) as executor:
         answers = list(executor.map(lambda domain: query_doh(ALI_DOH, domain, {}), domains))
     answers.append(query_doh(CF_DOH, "www.wikipedia.org", proxies))
+    answers.append(query_doh(CF_DOH, "www.larksuite.com", proxies))
     required_domains = {"api-sams.walmartmobile.cn", "decoration-sams.walmartmobile.cn",
                         "cinema-api-prd-mx.wandafilm.com", "misc-api-prd-mx.wandafilm.com"}
     for domain, addresses in answers:

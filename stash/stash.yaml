@@ -16,7 +16,7 @@ dns:
     - https://223.5.5.5/dns-query
   nameserver-policy:
     'rule-set:lan': https://223.5.5.5/dns-query
-    'rule-set:ai,apple-intelligence,spotify': https://1.1.1.1/dns-query
+    'rule-set:lark,ai,apple-intelligence,spotify': https://1.1.1.1/dns-query
     'rule-set:apple-cdn,apple-cn,apple-services,microsoft-cdn,microsoft': https://223.5.5.5/dns-query
     'rule-set:stream,telegram': https://1.1.1.1/dns-query
     'rule-set:direct,domestic': https://223.5.5.5/dns-query
@@ -45,6 +45,11 @@ proxy-groups:
   - name: AI
     type: select
     proxies: [美国, 日本, 新加坡, 台湾]
+    interval: -1
+    lazy: true
+  - name: Lark
+    type: select
+    proxies: [日本, 香港, 美国, 新加坡, 台湾]
     interval: -1
     lazy: true
   - name: Spotify
@@ -104,6 +109,17 @@ proxy-groups:
     lazy: true
 
 rule-providers:
+  # Lark 专用域名来自官方防火墙域名清单。
+  lark:
+    type: inline
+    behavior: domain
+    payload:
+      - '+.larksuite.com'
+      - '+.larksuite-us.com'
+      - '+.larksuitecdn.com'
+      - '+.larksuitepkg.com'
+      - '+.larkenterprise.com'
+      - '+.baseopendevx.com'
   # Spotify 条目来自 SukkaW/Surge 的 Source/stream.ts。
   spotify:
     type: inline
@@ -275,6 +291,7 @@ rules:
   - DST-PORT,53,REJECT,pre-matching
   # 明确的服务域名优先，其余域名在 IP 规则阶段触发解析。
   - RULE-SET,lan,DIRECT
+  - RULE-SET,lark,Lark
   - RULE-SET,ai,AI
   - RULE-SET,apple-intelligence,AI
   - RULE-SET,spotify,Spotify
