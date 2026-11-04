@@ -168,7 +168,7 @@ class ConfigTests(unittest.TestCase):
                 self.assertNotIn("use-url", group)
 
     def test_airport_override_scope(self):
-        self.assertEqual(set(AIRPORT_TEMPLATE), {"name", "desc", "proxy-providers"})
+        self.assertEqual(set(AIRPORT_TEMPLATE), {"name", "desc", "category", "proxy-providers"})
         self.assertEqual(set(AIRPORT_TEMPLATE["proxy-providers"]), {AIRPORT_TEMPLATE["name"]})
         provider = AIRPORT_TEMPLATE["proxy-providers"][AIRPORT_TEMPLATE["name"]]
         self.assertEqual(provider["url"], "https://example.invalid/replace-with-your-clash-subscription")

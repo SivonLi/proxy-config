@@ -11,3 +11,4 @@ proxy-providers:
 # 复用上面的机场名称，供 Stash 覆写列表显示。
 name: *airport_name
 desc: '通过此覆写的开关控制该机场；分流与 DNS 使用主配置。'
+category: '机场订阅'
