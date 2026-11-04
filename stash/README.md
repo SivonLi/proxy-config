@@ -78,6 +78,7 @@ pwsh -File stash/icons/build.ps1 -Magick magick
 | 流量 | 默认出口 |
 | --- | --- |
 | 局域网域名与私有地址 | DIRECT |
+| 1Password 专用服务、更新与附件 | DIRECT |
 | AI 与 Apple Intelligence | AI，初始选择美国 |
 | Lark 专用服务域名 | Lark，初始选择日本 |
 | Spotify | Spotify，初始使用默认代理 |
@@ -98,6 +99,8 @@ pwsh -File stash/icons/build.ps1 -Magick magick
 已命中代理域名规则的 TCP 连接直接交给所选节点，不进入后面的中国 IP 判断。域名集合尚未收录的国内服务通过国内 DoH 获取地址，再由中国 IP 集合判断是否直连。真实解析对这部分连接仍然必要，不能给全部 IP 规则统一添加 `no-resolve`。
 
 明确指定代理的 Lark、AI、流媒体、Telegram、下载和境外服务域名，按各自规则访问。域名集合、地址归属数据和服务部署都可能变化，这套规则无法保证所有中国应用的每个请求都直连。
+
+1Password 使用 `onepassword` 内嵌域名集合，固定选择 `DIRECT`，优先于下载和通用境外服务规则。专用域名取自 Sukka 的 `global`、`download` 和 `cdn`，并按 [1Password 官方网络清单](https://support.1password.com/ports-domains/)补充 `1infra.net`。集合包含 9 个域名后缀和 2 个精确域名，覆盖美国、欧洲、加拿大账号服务，以及附件、更新、图标和社区，随本配置维护。共享第三方服务继续使用通用分流。
 
 Lark 集合使用[官方防火墙域名清单](https://www.larksuite.com/hc/en-US/articles/360044784554-configure-organization-firewall-domain-and-ip-allowlist)中的 6 个专用域名，覆盖 `larksuite.com`、`larksuite-us.com`、`larksuitecdn.com`、`larksuitepkg.com`、`larkenterprise.com` 和 `baseopendevx.com` 及其子域名。集合优先于通用服务规则，随本配置维护。其他共享服务域名和直接访问 IP 的连接继续按通用规则处理。
 
@@ -177,7 +180,8 @@ python stash/check_config.py --online --proxy http://127.0.0.1:7890
 - 11 项本地检查通过，涵盖主配置与机场模板的 YAML 解析、重复键、分组引用、地区过滤表达式、内置 DNS 加密、Fake-IP 例外、域名与 IP 规则顺序、机场覆写范围和图标集。
 - 5 个地区组均通过 `include-all: true` 汇集节点，主配置的 `proxy-providers` 为空字典。机场模板只定义一个代理集及展示字段，名称通过 YAML 锚点复用，订阅地址为占位值。
 - 内置 DNS 的全部上游均为 HTTPS DNS，`follow-rule` 关闭，两个 IPv6 解析开关关闭，53 端口提前拦截位于全部分流规则之前。
-- 23 个远程集合与 3 个 inline 集合验证通过，合计 12,918 条记录；规则类型、引用和 CIDR 格式检查通过。`non_ip` 集合中附带的 IP 条目均包含 `no-resolve`，不会自行触发域名解析。
+- 配置包含 23 个远程集合与 4 个 inline 集合，引用检查通过。远程集合已通过规则类型和 CIDR 格式检查；`non_ip` 集合中附带的 IP 条目均包含 `no-resolve`，不会自行触发域名解析。
+- 1Password 的 11 个域名条目使用 `domain` 集合，直连规则优先于下载和通用境外服务规则。
 - 山姆的 `api-sams.walmartmobile.cn`、`decoration-sams.walmartmobile.cn` 通过国内 DoH 返回 `157.148.16.212`，属于 Sukka 中国 IP 集合。
 - 万达的 `cinema-api-prd-mx.wandafilm.com`、`misc-api-prd-mx.wandafilm.com` 通过国内 DoH 返回 `120.53.82.119`，属于 Sukka 中国 IP 集合。
 - `223.5.5.5` 在不指定 HTTP 代理时，为 8 个业务域名返回有效的 DoH 答案，验证过程保持 TLS 证书校验。

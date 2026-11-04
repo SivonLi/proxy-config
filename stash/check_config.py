@@ -100,7 +100,7 @@ class ConfigTests(unittest.TestCase):
 
     def test_ruleset_sources(self):
         inline = {name for name, provider in PROVIDERS.items() if provider.get("type") == "inline"}
-        self.assertEqual(inline, {"lark", "spotify", "spotify-ip"})
+        self.assertEqual(inline, {"onepassword", "lark", "spotify", "spotify-ip"})
         for name, provider in PROVIDERS.items():
             if name not in inline:
                 self.assertEqual(urlsplit(provider["url"]).hostname, "ruleset.skk.moe")
@@ -205,6 +205,9 @@ class ConfigTests(unittest.TestCase):
         lark = RULES.index(["RULE-SET", "lark", "Lark"])
         for name, target in [("download-domain", "下载"), ("domestic", "DIRECT"), ("global", "默认代理")]:
             self.assertLess(lark, RULES.index(["RULE-SET", name, target]))
+        onepassword = RULES.index(["RULE-SET", "onepassword", "DIRECT"])
+        for name, target in [("download-domain", "下载"), ("download", "下载"), ("global", "默认代理")]:
+            self.assertLess(onepassword, RULES.index(["RULE-SET", name, target]))
 
 
 def fetch_provider(item, proxies):

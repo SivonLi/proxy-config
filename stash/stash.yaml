@@ -108,6 +108,22 @@ proxy-groups:
     lazy: true
 
 rule-providers:
+  # 1Password 专用域名取自 Sukka 规则与官方网络清单。
+  onepassword:
+    type: inline
+    behavior: domain
+    payload:
+      - '+.1password.com'
+      - '+.1password.eu'
+      - '+.1password.ca'
+      - '+.1password.community'
+      - '+.1passwordservices.com'
+      - '+.1passwordusercontent.com'
+      - '+.1passwordusercontent.eu'
+      - '+.1passwordusercontent.ca'
+      - '+.1infra.net'
+      - app-updates.agilebits.com
+      - cache.agilebits.com
   # Lark 专用域名来自官方防火墙域名清单。
   lark:
     type: inline
@@ -290,6 +306,7 @@ rules:
   - DST-PORT,53,REJECT,pre-matching
   # 全部域名规则先于 IP 规则；命中代理的 TCP 请求交给对应节点解析。
   - RULE-SET,lan,DIRECT
+  - RULE-SET,onepassword,DIRECT
   - RULE-SET,lark,Lark
   - RULE-SET,ai,AI
   - RULE-SET,apple-intelligence,AI
