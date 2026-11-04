@@ -173,6 +173,30 @@ class ConfigTests(unittest.TestCase):
         self.assertIn("airport", CONFIG["proxy-providers"])
         self.assertEqual(urlsplit(CONFIG["proxy-providers"]["airport"]["url"]).hostname, "example.invalid")
 
+    def test_airport_main_override(self):
+        override = YAML(typ="safe").load(ROOT / "stash.stoverride")
+        self.assertNotIn("proxies", override)
+        self.assertNotIn("proxy-providers", override)
+        self.assertNotIn("arguments", override)
+        for field in ["mode", "log-level", "ipv6", "dns", "rules", "rule-providers"]:
+            self.assertEqual(override[field], CONFIG[field], field)
+        groups = override["proxy-groups"]
+        self.assertEqual(len(groups), len(CONFIG["proxy-groups"]))
+        for group, original in zip(groups, CONFIG["proxy-groups"]):
+            expected = dict(original)
+            if original["type"] == "url-test":
+                del expected["use"]
+                expected["include-all"] = True
+            self.assertEqual(group, expected, original["name"])
+
+    def test_airport_main_replace_directives(self):
+        override = YAML().load(ROOT / "stash.stoverride")
+        for field in ["dns", "proxy-groups", "rule-providers", "rules"]:
+            comment = override.ca.items[field][2]
+            self.assertIsNotNone(comment, field)
+            self.assertEqual(comment.start_mark.line, override.lc.key(field)[0], field)
+            self.assertEqual(comment.value.splitlines()[0].strip(), "#!replace", field)
+
     def test_references_and_service_order(self):
         groups = {item["name"] for item in CONFIG["proxy-groups"]}
         used = set()

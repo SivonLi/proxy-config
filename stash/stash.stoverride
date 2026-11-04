@@ -1,0 +1,319 @@
+name: 日常分流
+desc: 配合机场 Clash 主配置使用。提供加密 DNS、Sukka 分流、地区自动测速和策略组图标；订阅地址由主配置管理。
+
+mode: rule
+log-level: warning
+# Stash 自身仅解析 IPv4；IPv6 流量接管仍需启用 Tunnel IPv6 路由。
+ipv6: false
+
+dns: #!replace
+  # 内置 DNS 直连国内 DoH；Fake-IP 代理 TCP 连接由所选节点解析目标域名。
+  follow-rule: false
+  # 仅控制应用的 AAAA 查询；IPv6 流量接管需要在 Stash 界面启用。
+  ipv6: false
+  default-nameserver:
+    - https://223.5.5.5/dns-query
+  proxy-server-nameserver:
+    - https://223.5.5.5/dns-query
+  nameserver:
+    - https://223.5.5.5/dns-query
+  # 仅局域网域名返回真实地址，其他应用使用 Stash 默认的 Fake-IP。
+  fake-ip-filter:
+    - 'rule-set:lan'
+
+# 地区分组自动读取主配置的全部节点与远程代理集，并按名称筛选。
+proxy-groups: #!replace
+  - name: 默认代理
+    type: select
+    icon: https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/proxy.png?v=2
+    proxies: [香港, 日本, 美国, 新加坡, 台湾]
+    interval: -1
+    lazy: true
+  - name: AI
+    type: select
+    icon: https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/apple-intelligence.png?v=2
+    proxies: [美国, 日本, 新加坡, 台湾]
+    interval: -1
+    lazy: true
+  - name: Lark
+    type: select
+    icon: https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/lark.png?v=2
+    proxies: [日本, 香港, 美国, 新加坡, 台湾]
+    interval: -1
+    lazy: true
+  - name: Spotify
+    type: select
+    icon: https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/spotify.png?v=2
+    proxies: [默认代理, 香港, 日本, 美国, 新加坡, 台湾]
+    interval: -1
+    lazy: true
+  - name: Apple
+    type: select
+    icon: https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/apple.png?v=2
+    proxies: [DIRECT, 香港, 日本, 美国, 新加坡, 台湾]
+    interval: -1
+    lazy: true
+  - name: Microsoft
+    type: select
+    icon: https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/microsoft.png?v=2
+    proxies: [DIRECT, 香港, 日本, 美国, 新加坡, 台湾]
+    interval: -1
+    lazy: true
+  - name: 下载
+    type: select
+    icon: https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/download.png?v=2
+    proxies: [香港, 日本, 美国, 新加坡, 台湾, DIRECT]
+    interval: -1
+    lazy: true
+  - name: 香港
+    type: url-test
+    icon: https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/hong-kong.png?v=2
+    include-all: true
+    filter: '(?i)🇭🇰|香港|(^|[^a-z])hkg?([^a-z]|$)|hong[ -]*kong'
+    interval: 600
+    tolerance: 50
+    lazy: true
+  - name: 日本
+    type: url-test
+    icon: https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/japan.png?v=2
+    include-all: true
+    filter: '(?i)🇯🇵|日本|东京|東京|大阪|京都|(^|[^a-z])jpn?([^a-z]|$)|japan|tokyo|osaka'
+    interval: 600
+    tolerance: 50
+    lazy: true
+  - name: 美国
+    type: url-test
+    icon: https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/united-states.png?v=2
+    include-all: true
+    filter: '(?i)🇺🇸|美国|美國|纽约|紐約|洛杉矶|洛杉磯|旧金山|舊金山|西雅图|西雅圖|(^|[^a-z])usa?([^a-z]|$)|america|united[ -]*states'
+    interval: 600
+    tolerance: 50
+    lazy: true
+  - name: 新加坡
+    type: url-test
+    icon: https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/singapore.png?v=2
+    include-all: true
+    filter: '(?i)🇸🇬|新加坡|狮城|獅城|(^|[^a-z])sgp?([^a-z]|$)|singapore'
+    interval: 600
+    tolerance: 50
+    lazy: true
+  - name: 台湾
+    type: url-test
+    icon: https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/taiwan.png?v=2
+    include-all: true
+    filter: '(?i)🇹🇼|台湾|台灣|臺灣|台北|臺北|高雄|(^|[^a-z])twn?([^a-z]|$)|taiwan'
+    interval: 600
+    tolerance: 50
+    lazy: true
+
+rule-providers: #!replace
+  # Lark 专用域名来自官方防火墙域名清单。
+  lark:
+    type: inline
+    behavior: domain
+    payload:
+      - '+.larksuite.com'
+      - '+.larksuite-us.com'
+      - '+.larksuitecdn.com'
+      - '+.larksuitepkg.com'
+      - '+.larkenterprise.com'
+      - '+.baseopendevx.com'
+  # Spotify 条目来自 SukkaW/Surge 的 Source/stream.ts。
+  spotify:
+    type: inline
+    behavior: domain
+    payload:
+      - '+.pscdn.co'
+      - '+.scdn.co'
+      - '+.spoti.fi'
+      - '+.spotify.com'
+      - '+.byspotify.com'
+      - '+.spotify-everywhere.com'
+      - '+.spotify.design'
+      - '+.spotifycdn.com'
+      - '+.spotifycdn.net'
+      - '+.spotifycharts.com'
+      - '+.spotifycodes.com'
+      - '+.spotifyforbrands.com'
+      - '+.spotifyjobs.com'
+      - '+.spotify-com.akamaized.net'
+      - '+.spotifynewsroom.jp'
+      - '+.spotilocal.com'
+      - '+.tospotify.com'
+  spotify-ip:
+    type: inline
+    behavior: ipcidr
+    payload:
+      - 35.186.224.47/32
+  lan:
+    behavior: classical
+    format: text
+    url: https://ruleset.skk.moe/Clash/non_ip/lan.txt
+    path: ./rules/lan.txt
+    interval: 86400
+  ai:
+    behavior: classical
+    format: text
+    url: https://ruleset.skk.moe/Clash/non_ip/ai.txt
+    path: ./rules/ai.txt
+    interval: 86400
+  apple-intelligence:
+    behavior: classical
+    format: text
+    url: https://ruleset.skk.moe/Clash/non_ip/apple_intelligence.txt
+    path: ./rules/apple-intelligence.txt
+    interval: 86400
+  stream:
+    behavior: classical
+    format: text
+    url: https://ruleset.skk.moe/Clash/non_ip/stream.txt
+    path: ./rules/stream.txt
+    interval: 86400
+  telegram:
+    behavior: classical
+    format: text
+    url: https://ruleset.skk.moe/Clash/non_ip/telegram.txt
+    path: ./rules/telegram.txt
+    interval: 86400
+  apple-cdn:
+    behavior: domain
+    format: text
+    url: https://ruleset.skk.moe/Clash/domainset/apple_cdn.txt
+    path: ./rules/apple-cdn.txt
+    interval: 86400
+  apple-cn:
+    behavior: classical
+    format: text
+    url: https://ruleset.skk.moe/Clash/non_ip/apple_cn.txt
+    path: ./rules/apple-cn.txt
+    interval: 86400
+  apple-services:
+    behavior: classical
+    format: text
+    url: https://ruleset.skk.moe/Clash/non_ip/apple_services.txt
+    path: ./rules/apple-services.txt
+    interval: 86400
+  microsoft-cdn:
+    behavior: classical
+    format: text
+    url: https://ruleset.skk.moe/Clash/non_ip/microsoft_cdn.txt
+    path: ./rules/microsoft-cdn.txt
+    interval: 86400
+  microsoft:
+    behavior: classical
+    format: text
+    url: https://ruleset.skk.moe/Clash/non_ip/microsoft.txt
+    path: ./rules/microsoft.txt
+    interval: 86400
+  download-domain:
+    behavior: domain
+    format: text
+    url: https://ruleset.skk.moe/Clash/domainset/download.txt
+    path: ./rules/download-domain.txt
+    interval: 86400
+  download:
+    behavior: classical
+    format: text
+    url: https://ruleset.skk.moe/Clash/non_ip/download.txt
+    path: ./rules/download.txt
+    interval: 86400
+  global:
+    behavior: classical
+    format: text
+    url: https://ruleset.skk.moe/Clash/non_ip/global.txt
+    path: ./rules/global.txt
+    interval: 86400
+  direct:
+    behavior: classical
+    format: text
+    url: https://ruleset.skk.moe/Clash/non_ip/direct.txt
+    path: ./rules/direct.txt
+    interval: 86400
+  domestic:
+    behavior: classical
+    format: text
+    url: https://ruleset.skk.moe/Clash/non_ip/domestic.txt
+    path: ./rules/domestic.txt
+    interval: 86400
+  lan-ip:
+    behavior: classical
+    format: text
+    url: https://ruleset.skk.moe/Clash/ip/lan.txt
+    path: ./rules/lan-ip.txt
+    interval: 86400
+  ai-ip:
+    behavior: classical
+    format: text
+    url: https://ruleset.skk.moe/Clash/ip/ai.txt
+    path: ./rules/ai-ip.txt
+    interval: 86400
+  stream-ip:
+    behavior: classical
+    format: text
+    url: https://ruleset.skk.moe/Clash/ip/stream.txt
+    path: ./rules/stream-ip.txt
+    interval: 86400
+  telegram-ip:
+    behavior: classical
+    format: text
+    url: https://ruleset.skk.moe/Clash/ip/telegram.txt
+    path: ./rules/telegram-ip.txt
+    interval: 86400
+  apple-services-ip:
+    behavior: classical
+    format: text
+    url: https://ruleset.skk.moe/Clash/ip/apple_services.txt
+    path: ./rules/apple-services-ip.txt
+    interval: 86400
+  domestic-ip:
+    behavior: classical
+    format: text
+    url: https://ruleset.skk.moe/Clash/ip/domestic.txt
+    path: ./rules/domestic-ip.txt
+    interval: 86400
+  china-ip:
+    behavior: ipcidr
+    format: text
+    url: https://ruleset.skk.moe/Clash/ip/china_ip.txt
+    path: ./rules/china-ip.txt
+    interval: 86400
+  china-ipv6:
+    behavior: ipcidr
+    format: text
+    url: https://ruleset.skk.moe/Clash/ip/china_ip_ipv6.txt
+    path: ./rules/china-ipv6.txt
+    interval: 86400
+
+rules: #!replace
+  # 提前拦截进入分流引擎的 IPv4 / IPv6 TCP、UDP 明文 DNS。
+  - DST-PORT,53,REJECT,pre-matching
+  # 全部域名规则先于 IP 规则；命中代理的 TCP 请求交给对应节点解析。
+  - RULE-SET,lan,DIRECT
+  - RULE-SET,lark,Lark
+  - RULE-SET,ai,AI
+  - RULE-SET,apple-intelligence,AI
+  - RULE-SET,spotify,Spotify
+  - DOMAIN-KEYWORD,-spotify-com,Spotify
+  - RULE-SET,apple-cdn,DIRECT
+  - RULE-SET,apple-cn,DIRECT
+  - RULE-SET,apple-services,Apple
+  - RULE-SET,microsoft-cdn,DIRECT
+  - RULE-SET,microsoft,Microsoft
+  - RULE-SET,stream,默认代理
+  - RULE-SET,telegram,默认代理
+  - RULE-SET,download-domain,下载
+  - RULE-SET,download,下载
+  - RULE-SET,direct,DIRECT
+  - RULE-SET,domestic,DIRECT
+  - RULE-SET,global,默认代理
+  # 未命中域名规则时，通过国内 DoH 查询真实地址，供后续 IP 规则判断。
+  - RULE-SET,lan-ip,DIRECT
+  - RULE-SET,ai-ip,AI,no-resolve
+  - RULE-SET,spotify-ip,Spotify,no-resolve
+  - RULE-SET,apple-services-ip,Apple,no-resolve
+  - RULE-SET,stream-ip,默认代理,no-resolve
+  - RULE-SET,telegram-ip,默认代理,no-resolve
+  - RULE-SET,domestic-ip,DIRECT,no-resolve
+  - RULE-SET,china-ip,DIRECT
+  - RULE-SET,china-ipv6,DIRECT
+  - MATCH,默认代理

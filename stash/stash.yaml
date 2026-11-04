@@ -1,4 +1,4 @@
-# iOS 3.7+ / macOS 4.4+；使用前通过 airport.stoverride 填写机场订阅地址。
+# iOS 3.7+ / macOS 4.4+；在 airport.stoverride 的“参数”页面填写机场订阅地址。
 mode: rule
 log-level: warning
 # Stash 自身仅解析 IPv4；IPv6 流量接管仍需启用 Tunnel IPv6 路由。
