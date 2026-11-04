@@ -2,24 +2,38 @@
 
 ## 导入与选择节点
 
-使用 [stash.yaml](stash.yaml) 作为主配置，在文件中填写机场 Clash 订阅地址。适用于 iOS Stash 3.7.0，包括在 Apple silicon Mac 上运行的 iOS 版。原生 Stash for Mac 需要 4.4 及以上版本。规则预匹配功能在当前官方文档中仍标注为 Beta。
+使用 [stash.yaml](stash.yaml) 作为主配置，每个机场单独导入一份 [airport.stoverride](airport.stoverride)。在 Stash 的覆写页面，通过各自的开关启用或停用机场。适用于 iOS Stash 3.7.0，包括在 Apple silicon Mac 上运行的 iOS 版。原生 Stash for Mac 需要 4.4 及以上版本。规则预匹配功能在当前官方文档中仍标注为 Beta。
 
-1. 下载下方的 `stash.yaml`，保存为本地文件 `stash.local.yaml`。
-2. 将 `proxy-providers.airport.url` 的值替换为机场提供的完整 HTTPS Clash 订阅链接，保留原有缩进、两侧单引号和同级字段。
-3. 在 Stash 的配置页面通过文件导入，将它选为当前主配置。停用会修改订阅地址、DNS 或分流规则的覆写。启动 Stash，机场订阅和规则首次下载成功后，进入策略页面。
-4. 在“默认代理”手动选择香港、日本、美国、新加坡或台湾，初始地区为香港。
+1. 下载下方的 `stash.yaml`，在 Stash 的配置页面通过本地文件导入，设为当前主配置。
+2. 下载 `airport.stoverride`。将 `&airport_name` 后面的 `'我的机场'` 改为机场名称，将 `url` 改为完整 HTTPS Clash 订阅地址。保留缩进、两侧单引号，以及 `&airport_name` 和 `*airport_name`。
+3. 将填写后的文件保存为 `airport-a.local.stoverride`，在 Stash 的覆写页面通过本地文件导入并启用。第二个机场使用另一份模板，填写不同名称和地址，保存为 `airport-b.local.stoverride` 后导入。继续添加机场时使用同样的方法。
+4. 停用会修改 DNS、策略组或分流规则的其他覆写。至少启用一个机场，启动 Stash，等待机场节点与规则下载成功。
+5. 在“默认代理”手动选择香港、日本、美国、新加坡或台湾，初始地区为香港。所选地区需要包含可用节点。
 
 ```text
 https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/stash.yaml
+https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/airport.stoverride
 ```
 
 AI 初始选择美国，可选日本、新加坡和台湾。Lark 初始选择日本，可选香港、美国、新加坡和台湾。Spotify 初始选择“默认代理”，也可以独立选择地区。Apple 和 Microsoft 初始选择 `DIRECT`，也可以选择地区。下载初始选择香港，可手动选择 `DIRECT`。地区分组根据测速结果自动选择节点。
 
-`proxy-providers.airport` 从 Clash 订阅中读取 `proxies` 节点列表，5 个地区组通过 `use: [airport]` 引用这些节点。DNS、策略组、规则集合、分流规则和图标由本文件管理。机场订阅中的其他顶层配置不会合并到本文件，节点内部的协议和连接参数仍由机场提供。字段用法见 [Stash 远程代理集文档](https://stash.wiki/proxy-protocols/proxy-providers)。
+各机场的远程代理集从 Clash 订阅中读取 `proxies` 节点列表。5 个地区组使用 `include-all: true` 汇集节点，再按地区过滤并自动测速。增加机场或修改机场名称时，只需编辑对应的机场覆写。字段用法见 [Stash 远程代理集文档](https://stash.wiki/proxy-protocols/proxy-providers)和 [策略组文档](https://stash.wiki/proxy-protocols/proxy-groups)。
 
-机场地址也可以在主配置的可视化编辑页面中设置。主配置采用手动更新：下载新模板，填写自己的订阅地址后重新导入。机场节点与规则集合按配置中的周期独立更新。
+DNS、策略组、规则集合、分流规则和图标由主配置管理。每份机场覆写只添加一个远程代理集，以及供覆写页面显示的名称和说明。机场订阅中的其他顶层配置不会参与分流，节点内部的协议和连接参数仍由机场提供。
 
-机场订阅地址包含凭证，请保存在自己的设备中。工作区的 `.gitignore` 已排除 `stash/*.local.yaml`。
+更新主配置时，下载新的 `stash.yaml` 并重新通过本地文件导入，保留设备上的机场覆写。机场订阅地址保存在各自的本地覆写中，节点和规则集合按配置中的周期独立更新。
+
+机场订阅地址包含凭证，请保存在自己的设备中。工作区的 `.gitignore` 已排除 `stash/*.local.yaml` 和 `stash/*.local.stoverride`。
+
+### 机场名称与开关
+
+机场名称只填写一次。模板通过 YAML 锚点 `&airport_name` 和别名 `*airport_name`，让代理集名称与覆写页面的显示名称使用同一个值。每份文件中的锚点相互独立，各机场可以使用同一份模板。
+
+每个机场必须使用不同名称。Stash 会递归合并不同覆写中的 `proxy-providers`；同名代理集会合并或覆盖，无法作为两个独立机场管理。机场覆写采用普通字典合并，具体语义见 [覆写文档](https://stash.wiki/configuration/override)。
+
+在覆写页面启用机场后，它的节点参与各地区组的筛选与测速。关闭该机场的覆写并应用配置后，它的代理集从当前配置中移除。开关控制整份机场订阅，可以同时启用多个机场。已有连接的结束时机由 Stash 管理，需要立即重新建立连接时，可重新连接 Stash。
+
+**全部机场关闭，或所选地区没有节点时，Stash 会将空组视为 `DIRECT`。** 使用代理前需要保持相应地区至少有一个可用节点。每份模板均未指定固定缓存路径，复制模板时无需另行维护缓存文件名。
 
 机场节点协议必须得到 Stash 支持。机场需要专用 DNS 时，该服务器必须支持加密 DNS；必要的 DNS 和 `hosts` 设置可以填写在自己的本地配置中。
 
@@ -29,9 +43,9 @@ AI 初始选择美国，可选日本、新加坡和台湾。Lark 初始选择日
 
 首页流量和到期时间来自机场响应头中的 `Subscription-Userinfo`。根据 [Stash 服务提供商订阅文档](https://stash.wiki/features/service-provider-subscription)，Stash 优先读取主配置的定时更新地址；没有更新地址时，读取主配置中的 `proxy-providers.url`。Stash 优先使用 `HEAD` 请求获取这些信息。
 
-通过本地文件导入、主配置没有定时更新地址时，Stash 使用 `proxy-providers.airport.url` 获取机场信息。机场接口需要返回有效的 `Subscription-Userinfo`，仅返回节点内容无法提供流量和到期时间。节点列表加载成功与首页订阅卡显示需要分别检查。
+机场接口需要返回有效的 `Subscription-Userinfo`，仅返回节点内容无法提供流量和到期时间。官方文档没有明确说明首页如何展示多个覆写中新增的代理集，因此这里不保证每个机场都有独立首页卡片。节点列表加载成功与首页订阅卡显示需要分别检查。
 
-通过 GitHub URL 导入时，主配置可能保留 GitHub 作为更新来源，该地址没有机场的订阅响应头；更新主配置还会恢复模板中的订阅占位地址。因此本配置采用本地文件导入，并在更新模板时手动保留自己的订阅地址。
+主配置采用本地文件导入，保持没有定时更新地址。通过 GitHub URL 导入会使 GitHub 更新来源参与订阅信息的优先判断，该地址没有机场的订阅响应头。
 
 ## 图标集
 
@@ -138,7 +152,7 @@ DNS 出口检测网站展示的是递归 DNS 访问权威 DNS 时的出口。出
 
 地区分组自动选择可用的低延迟节点。`tolerance: 50` 表示新节点比当前节点快超过 50 ms 才会切换；当前节点测速失败时立即切换。机场远程代理集使用 `https://www.gstatic.com/generate_204`，超时为 5 秒。测速结果表示连通性和延迟，不能表示下载带宽或服务解锁能力。具体语义见 [策略组文档](https://stash.wiki/proxy-protocols/proxy-groups)、[延迟测试文档](https://stash.wiki/proxy-protocols/proxy-benchmark)和 [远程代理集文档](https://stash.wiki/proxy-protocols/proxy-providers)。
 
-机场远程代理集和规则集合每 86400 秒更新一次，并设置本地缓存路径。每种 DNS 用途只配置一个上游，减少重复查询。较大的域名和中国 IP 集合使用 `domain` / `ipcidr` 格式，其余集合保留官方的 `classical` 格式。
+已启用机场的远程代理集和规则集合每 86400 秒更新一次。规则集合指定本地缓存路径。每种 DNS 用途只配置一个上游，减少重复查询。较大的域名和中国 IP 集合使用 `domain` / `ipcidr` 格式，其余集合保留官方的 `classical` 格式。
 
 在 Stash 界面关闭“混合使用多个网络”和“并发连接”。保持正常日志等级，日常配置使用 `warning`。这些措施减少额外连接与网络请求，实际耗电仍取决于节点协议、信号质量、应用流量和系统状态。
 
@@ -158,8 +172,8 @@ python stash/check_config.py --online --proxy http://127.0.0.1:7890
 
 2026-11-04 完成以下检查：
 
-- 10 项本地检查通过，涵盖主配置的 YAML 解析、重复键、分组引用、地区过滤表达式、内置 DNS 加密、Fake-IP 例外、域名与 IP 规则顺序、机场远程代理集和图标集。
-- 5 个地区组均通过 `use: [airport]` 引用机场远程代理集，仓库模板中的订阅地址为占位值。
+- 11 项本地检查通过，涵盖主配置与机场模板的 YAML 解析、重复键、分组引用、地区过滤表达式、内置 DNS 加密、Fake-IP 例外、域名与 IP 规则顺序、机场覆写范围和图标集。
+- 5 个地区组均通过 `include-all: true` 汇集节点，主配置的 `proxy-providers` 为空字典。机场模板只定义一个代理集及展示字段，名称通过 YAML 锚点复用，订阅地址为占位值。
 - 内置 DNS 的全部上游均为 HTTPS DNS，`follow-rule` 关闭，两个 IPv6 解析开关关闭，53 端口提前拦截位于全部分流规则之前。
 - 23 个远程集合与 3 个 inline 集合验证通过，合计 12,918 条记录；规则类型、引用和 CIDR 格式检查通过。`non_ip` 集合中附带的 IP 条目均包含 `no-resolve`，不会自行触发域名解析。
 - 山姆的 `api-sams.walmartmobile.cn`、`decoration-sams.walmartmobile.cn` 通过国内 DoH 返回 `157.148.16.212`，属于 Sukka 中国 IP 集合。
@@ -168,7 +182,7 @@ python stash/check_config.py --online --proxy http://127.0.0.1:7890
 
 上述请求验证了上游服务的可用性。Windows 上的连接路径受当前系统网络设置影响，没有执行 Stash 的实际 DNS 规则。
 
-当前工作区位于 Windows，没有 Apple 平台的 Stash 运行环境，也没有机场订阅凭证。Stash 原生配置加载、首页订阅信息、订阅节点协议、节点连通性、隧道接管和设备耗电需要结合实际设备验证。本地检查不能代替这些运行结果。
+当前工作区位于 Windows，没有 Apple 平台的 Stash 运行环境，也没有机场订阅凭证。Stash 原生配置加载、多个机场的界面开关、首页订阅信息、订阅节点协议、节点连通性、隧道接管和设备耗电需要结合实际设备验证。本地检查不能代替这些运行结果。
 
 iMessage 图片上传速度需要结合发送时的连接记录判断。记录应包含上传域名、命中规则和实际出口。现有山姆、万达记录已经证明这些业务请求通过香港节点访问；当前没有 iMessage 的连接记录，无法确认其速度问题的原因。
 

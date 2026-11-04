@@ -19,6 +19,7 @@ from ruamel.yaml import YAML
 
 ROOT = Path(__file__).resolve().parent
 CONFIG = YAML(typ="safe").load(ROOT / "stash.yaml")
+AIRPORT_TEMPLATE = YAML(typ="safe").load(ROOT / "airport.stoverride")
 RULES = list(csv.reader(CONFIG["rules"]))
 PROVIDERS = CONFIG["rule-providers"]
 ALI_DOH = "https://223.5.5.5/dns-query"
@@ -158,16 +159,30 @@ class ConfigTests(unittest.TestCase):
             ipaddress.ip_address(address.hostname)
 
     def test_subscription_provider(self):
-        self.assertEqual(set(CONFIG["proxy-providers"]), {"airport"})
-        provider = CONFIG["proxy-providers"]["airport"]
-        self.assertEqual(provider["url"], "https://example.invalid/replace-with-your-clash-subscription")
-        self.assertEqual(provider["interval"], 86400)
+        self.assertEqual(CONFIG["proxy-providers"], {})
         self.assertFalse(CONFIG.get("proxies"))
         for group in CONFIG["proxy-groups"]:
             if group["type"] == "url-test":
-                self.assertEqual(group["use"], ["airport"])
-                self.assertNotIn("include-all", group)
+                self.assertTrue(group["include-all"])
+                self.assertNotIn("use", group)
                 self.assertNotIn("use-url", group)
+
+    def test_airport_override_scope(self):
+        self.assertEqual(set(AIRPORT_TEMPLATE), {"name", "desc", "proxy-providers"})
+        self.assertEqual(set(AIRPORT_TEMPLATE["proxy-providers"]), {AIRPORT_TEMPLATE["name"]})
+        provider = AIRPORT_TEMPLATE["proxy-providers"][AIRPORT_TEMPLATE["name"]]
+        self.assertEqual(provider["url"], "https://example.invalid/replace-with-your-clash-subscription")
+        self.assertEqual(provider["interval"], 86400)
+        self.assertEqual(provider["benchmark-url"], "https://www.gstatic.com/generate_204")
+        self.assertEqual(provider["benchmark-timeout"], 5)
+        self.assertNotIn("path", provider)
+        template = YAML().load(ROOT / "airport.stoverride")
+        name = next(iter(template["proxy-providers"]))
+        self.assertEqual(name.anchor.value, "airport_name")
+        self.assertIs(template["name"], name)
+        comment = template.ca.items.get("proxy-providers", [None] * 4)[2]
+        if comment:
+            self.assertNotIn("#!replace", comment.value)
 
     def test_references_and_service_order(self):
         groups = {item["name"] for item in CONFIG["proxy-groups"]}

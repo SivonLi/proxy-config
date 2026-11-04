@@ -1,3 +1,4 @@
 .work/
 work/
 stash/*.local.yaml
+stash/*.local.stoverride

@@ -1,4 +1,4 @@
-# iOS 3.7+ / macOS 4.4+；在本文件的 proxy-providers.airport.url 填写机场订阅地址。
+# iOS 3.7+ / macOS 4.4+；每个机场各导入一份 airport.stoverride，在覆写页面独立启停。
 mode: rule
 log-level: warning
 # Stash 自身仅解析 IPv4；IPv6 流量接管仍需启用 Tunnel IPv6 路由。
@@ -19,16 +19,8 @@ dns:
   fake-ip-filter:
     - 'rule-set:lan'
 
-proxy-providers:
-  airport:
-    # 在本地副本中填写完整 HTTPS Clash 订阅地址，保留两侧的单引号。
-    url: 'https://example.invalid/replace-with-your-clash-subscription'
-    path: ./providers/airport.yaml
-    interval: 86400
-    benchmark-url: https://www.gstatic.com/generate_204
-    benchmark-timeout: 5
-    headers:
-      User-Agent: Stash
+# 已启用的机场覆写向此处添加节点订阅；每个机场使用不同名称。
+proxy-providers: {}
 
 # 手动分组关闭定时测速；地区分组按需测速并自动选择节点。
 proxy-groups:
@@ -77,7 +69,7 @@ proxy-groups:
   - name: 香港
     type: url-test
     icon: https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/hong-kong.png?v=2
-    use: [airport]
+    include-all: true
     filter: '(?i)🇭🇰|香港|(^|[^a-z])hkg?([^a-z]|$)|hong[ -]*kong'
     interval: 600
     tolerance: 50
@@ -85,7 +77,7 @@ proxy-groups:
   - name: 日本
     type: url-test
     icon: https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/japan.png?v=2
-    use: [airport]
+    include-all: true
     filter: '(?i)🇯🇵|日本|东京|東京|大阪|京都|(^|[^a-z])jpn?([^a-z]|$)|japan|tokyo|osaka'
     interval: 600
     tolerance: 50
@@ -93,7 +85,7 @@ proxy-groups:
   - name: 美国
     type: url-test
     icon: https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/united-states.png?v=2
-    use: [airport]
+    include-all: true
     filter: '(?i)🇺🇸|美国|美國|纽约|紐約|洛杉矶|洛杉磯|旧金山|舊金山|西雅图|西雅圖|(^|[^a-z])usa?([^a-z]|$)|america|united[ -]*states'
     interval: 600
     tolerance: 50
@@ -101,7 +93,7 @@ proxy-groups:
   - name: 新加坡
     type: url-test
     icon: https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/singapore.png?v=2
-    use: [airport]
+    include-all: true
     filter: '(?i)🇸🇬|新加坡|狮城|獅城|(^|[^a-z])sgp?([^a-z]|$)|singapore'
     interval: 600
     tolerance: 50
@@ -109,7 +101,7 @@ proxy-groups:
   - name: 台湾
     type: url-test
     icon: https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/taiwan.png?v=2
-    use: [airport]
+    include-all: true
     filter: '(?i)🇹🇼|台湾|台灣|臺灣|台北|臺北|高雄|(^|[^a-z])twn?([^a-z]|$)|taiwan'
     interval: 600
     tolerance: 50
