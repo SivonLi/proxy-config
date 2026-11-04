@@ -18,6 +18,7 @@ from ruamel.yaml import YAML
 
 ROOT = Path(__file__).resolve().parent
 CONFIG = YAML(typ="safe").load(ROOT / "stash.yaml")
+AIRPORT_OVERRIDE = YAML(typ="safe").load(ROOT / "airport.stoverride")
 RULES = list(csv.reader(CONFIG["rules"]))
 PROVIDERS = CONFIG["rule-providers"]
 ALI_DOH = "https://223.5.5.5/dns-query"
@@ -58,7 +59,8 @@ class ConfigTests(unittest.TestCase):
         self.assertEqual(len(groups), len(CONFIG["proxy-groups"]))
         regions = {"香港", "日本", "美国", "新加坡", "台湾"}
         self.assertEqual(set(groups["默认代理"]["proxies"]), regions)
-        self.assertEqual(set(groups["下载"]["proxies"]), regions)
+        self.assertEqual(set(groups["下载"]["proxies"]), regions | {"DIRECT"})
+        self.assertEqual(groups["下载"]["proxies"][0], "香港")
         self.assertEqual(set(groups["AI"]["proxies"]), regions - {"香港"})
         self.assertEqual(groups["Spotify"]["proxies"][0], "默认代理")
         self.assertEqual(set(groups["Spotify"]["proxies"]), regions | {"默认代理"})
@@ -89,7 +91,8 @@ class ConfigTests(unittest.TestCase):
         self.assertFalse(settings["ipv6"])
         self.assertTrue(settings["follow-rule"])
         self.assertNotIn("fallback", settings)
-        self.assertEqual(RULES[0], ["DST-PORT", "53", "REJECT"])
+        self.assertEqual(RULES[0], ["DST-PORT", "53", "REJECT", "pre-matching"])
+        self.assertEqual([rule for rule in RULES if "pre-matching" in rule], [RULES[0]])
         endpoints = list(settings["nameserver-policy"].values())
         for field in ["nameserver", "default-nameserver", "proxy-server-nameserver"]:
             self.assertEqual(len(settings[field]), 1)
@@ -101,6 +104,21 @@ class ConfigTests(unittest.TestCase):
             ipaddress.ip_address(address.hostname)
         self.assertIn(["IP-CIDR", "1.1.1.1/32", "默认代理", "no-resolve"], RULES)
         self.assertIn(["IP-CIDR", "223.5.5.5/32", "DIRECT", "no-resolve"], RULES)
+
+    def test_private_subscription_parameter(self):
+        self.assertEqual(AIRPORT_OVERRIDE["arguments-version"], 1)
+        arguments = AIRPORT_OVERRIDE["arguments"]
+        self.assertEqual(set(arguments), {"subscription_url"})
+        parameter = arguments["subscription_url"]
+        self.assertEqual(parameter["type"], "input")
+        self.assertTrue(parameter["required"])
+        self.assertNotIn("default", parameter)
+        self.assertLessEqual(parameter["min-length"], parameter["max-length"])
+        body = {key: value for key, value in AIRPORT_OVERRIDE.items()
+                if key not in {"name", "desc", "arguments-version", "arguments"}}
+        self.assertEqual(body, {"proxy-providers": {"airport": {"url": "${args.subscription_url}"}}})
+        self.assertIn("airport", CONFIG["proxy-providers"])
+        self.assertEqual(urlsplit(CONFIG["proxy-providers"]["airport"]["url"]).hostname, "example.invalid")
 
     def test_references_and_service_order(self):
         groups = {item["name"] for item in CONFIG["proxy-groups"]}

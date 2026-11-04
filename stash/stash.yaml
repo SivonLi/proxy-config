@@ -1,4 +1,4 @@
-# iOS 3.6+ / macOS 4.3+；使用前填写机场订阅地址。
+# iOS 3.7+ / macOS 4.4+；使用前通过 airport.stoverride 填写机场订阅地址。
 mode: rule
 log-level: warning
 # Stash 自身仅解析 IPv4；IPv6 流量接管仍需启用 Tunnel IPv6 路由。
@@ -26,7 +26,7 @@ dns:
 
 proxy-providers:
   airport:
-    # 将此地址替换为机场提供的 Clash 订阅，保留引号。
+    # 通过 airport.stoverride 参数填写 Clash 订阅，也可在本地副本中替换此地址。
     url: 'https://example.invalid/replace-with-your-clash-subscription'
     path: ./providers/airport.yaml
     interval: 86400
@@ -64,7 +64,7 @@ proxy-groups:
     lazy: true
   - name: 下载
     type: select
-    proxies: [香港, 日本, 美国, 新加坡, 台湾]
+    proxies: [香港, 日本, 美国, 新加坡, 台湾, DIRECT]
     interval: -1
     lazy: true
   - name: 香港
@@ -271,8 +271,8 @@ rule-providers:
     interval: 86400
 
 rules:
-  # 拦截进入分流规则的 IPv4 / IPv6 TCP、UDP 明文 DNS。
-  - DST-PORT,53,REJECT
+  # 提前拦截进入分流引擎的 IPv4 / IPv6 TCP、UDP 明文 DNS。
+  - DST-PORT,53,REJECT,pre-matching
   # 明确的服务域名优先，其余域名在 IP 规则阶段触发解析。
   - RULE-SET,lan,DIRECT
   - RULE-SET,ai,AI

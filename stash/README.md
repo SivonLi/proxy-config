@@ -2,12 +2,16 @@
 
 ## 导入与选择节点
 
-配置文件为 [stash.yaml](stash.yaml)。适用于 iOS Stash 3.6.5，包括在 Apple silicon Mac 上运行的 iOS 版。原生 Stash for Mac 需要 4.3 及以上版本。
+配置文件为 [stash.yaml](stash.yaml)。适用于 iOS Stash 3.7.0，包括在 Apple silicon Mac 上运行的 iOS 版。原生 Stash for Mac 需要 4.4 及以上版本。本文使用的覆写参数和规则预匹配功能，在当前官方文档中仍标注为 Beta。
 
-1. 复制为 `stash.local.yaml`，在 `proxy-providers.airport.url` 填写机场的 Clash 订阅地址。保留地址两侧的单引号。
-2. 将本地文件导入 Stash。机场订阅和规则首次下载成功后，进入策略页面。
+1. 将 `stash.yaml` 导入 Stash，作为主配置。
+2. 在覆写页面导入 [airport.stoverride](airport.stoverride)，打开“参数”，填写机场的完整 HTTPS Clash 订阅地址，保存并启用覆写。启动 Stash，机场订阅和规则首次下载成功后，进入策略页面。
 3. 在“默认代理”手动选择香港、日本、美国、新加坡或台湾，初始地区为香港。
-4. AI 初始选择美国，可选日本、新加坡和台湾。Spotify 初始选择“默认代理”，也可以独立选择地区。Apple 和 Microsoft 初始选择 `DIRECT`，也可以选择地区。下载初始选择香港。地区分组根据测速结果自动选择节点。
+4. AI 初始选择美国，可选日本、新加坡和台湾。Spotify 初始选择“默认代理”，也可以独立选择地区。Apple 和 Microsoft 初始选择 `DIRECT`，也可以选择地区。下载初始选择香港，可手动选择 `DIRECT`。地区分组根据测速结果自动选择节点。
+
+覆写只修改 `proxy-providers.airport.url`。订阅参数为必填项，每台设备分别填写；更新覆写会保留本设备的参数，分享或导出覆写只包含原始模板。参数用法见 [Stash 覆写文档](https://stash.wiki/configuration/override)。更新主配置时，继续启用此覆写即可使用已填写的订阅。
+
+也可以复制主配置为 `stash.local.yaml`，直接填写 `proxy-providers.airport.url` 后导入，保留地址两侧的单引号。这种方式更新主配置时，需要保留自己的订阅地址。
 
 机场订阅地址包含凭证，请保存在自己的设备中。工作区的 `.gitignore` 已排除 `stash/*.local.yaml`。
 
@@ -30,7 +34,7 @@ Stash 从完整 Clash 订阅中提取 `proxies`。机场提供的分组、规则
 | 其他 Apple 服务 | Apple，初始为 DIRECT |
 | Microsoft CDN | DIRECT |
 | 其他 Microsoft 服务 | Microsoft，初始为 DIRECT |
-| 规则中的下载站点 | 下载，初始选择香港 |
+| 规则中的下载站点 | 下载，初始选择香港，可选择 DIRECT |
 | 国内域名、解析后属于中国 IP 的其余域名 | DIRECT |
 | Sukka 境外服务域名与其余流量 | 默认代理 |
 
@@ -64,7 +68,9 @@ DNS 服务器使用 IP 地址，节点 DNS 使用独立通道，连接代理时�
 
 Stash 管理的全部上游查询使用 DoH，包括节点域名、Bootstrap 和局域网域名。配置中没有系统 DNS、明文 DNS 或明文回退。国内解析服务可以看到分配给它的查询，机场节点端的域名解析由机场控制。
 
-规则首条为 `DST-PORT,53,REJECT`，阻止进入 Stash 分流规则的 TCP、UDP 53 端口连接，覆盖 IPv4 和 IPv6。Stash 已接管并交给内置 DNS 服务处理的查询，使用上述 DoH 上游。拦截规则依据 [规则类型文档](https://stash.wiki/rules/rule-types)。
+规则首条为 `DST-PORT,53,REJECT,pre-matching`，阻止进入 Stash 分流引擎的 TCP、UDP 53 端口连接，覆盖 IPv4 和 IPv6。`pre-matching` 是 3.7 新增的提前拒绝选项：iOS 在读取连接数据前拒绝，UDP 在首个数据包阶段拒绝，从而减少连接处理。已交给 Stash 内置 DNS 服务处理的查询，使用上述 DoH 上游。选项语义与支持的规则类型见 [规则类型文档](https://stash.wiki/rules/rule-types)。
+
+提前拒绝的请求不会出现在连接列表中。核心日志按目标限制记录频率；需要确认匹配阶段时，可使用 [HTTP API](https://stash.wiki/features/http-api) 的 `/rules/match` 查看 `stage` 字段。
 
 仅由路由器或公司 DNS 解析的内网域名，公共 DoH 通常无法解析。可以通过私有 IP 访问设备，或在 `hosts` 中填写内网域名与地址。需要动态解析内网域名时，必须配置能解析这些名称的内网 DoH、DoT 或 DoQ 服务。发给公共 DoH 的内网域名会对该解析服务可见。
 
@@ -107,8 +113,8 @@ python stash/check_config.py --online --proxy http://127.0.0.1:7890
 
 2026-11-04 完成以下检查：
 
-- 6 项本地检查通过，涵盖 YAML 解析、重复键、分组引用、地区过滤表达式、DNS 加密和国内规则顺序。
-- 全部上游均为 HTTPS DNS，两个 IPv6 解析开关关闭，53 端口拦截位于全部分流规则之前。
+- 7 项本地检查通过，涵盖主配置与覆写的 YAML 解析、重复键、分组引用、地区过滤表达式、DNS 加密、国内规则顺序和订阅参数声明。
+- 全部上游均为 HTTPS DNS，两个 IPv6 解析开关关闭，53 端口提前拦截位于全部分流规则之前。
 - 23 个远程集合与 2 个 inline 集合验证通过，合计 12,912 条记录；规则类型、引用和 CIDR 格式检查通过。
 - 山姆的 `api-sams.walmartmobile.cn`、`decoration-sams.walmartmobile.cn` 通过国内 DoH 返回 `157.148.16.212`，属于 Sukka 中国 IP 集合。
 - 万达的 `cinema-api-prd-mx.wandafilm.com`、`misc-api-prd-mx.wandafilm.com` 通过国内 DoH 返回 `120.53.82.119`，属于 Sukka 中国 IP 集合。

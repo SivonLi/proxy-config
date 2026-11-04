@@ -1,0 +1,15 @@
+name: 机场订阅
+desc: 在参数中填写 Clash 订阅地址，供 stash.yaml 使用。参数保存在当前设备，覆写更新后保留。
+arguments-version: 1
+arguments:
+  subscription_url:
+    type: input
+    title: Clash 订阅地址
+    description: 填写机场提供的完整 HTTPS 订阅地址，仅保存在自己的设备中。
+    required: true
+    min-length: 8
+    max-length: 4096
+
+proxy-providers:
+  airport:
+    url: '${args.subscription_url}'
