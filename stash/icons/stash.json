@@ -4,51 +4,51 @@
   "icons": [
     {
       "name": "默认代理",
-      "url": "https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/proxy.png"
+      "url": "https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/proxy.png?v=2"
     },
     {
       "name": "AI",
-      "url": "https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/apple-intelligence.png"
+      "url": "https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/apple-intelligence.png?v=2"
     },
     {
       "name": "Lark",
-      "url": "https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/lark.png"
+      "url": "https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/lark.png?v=2"
     },
     {
       "name": "Spotify",
-      "url": "https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/spotify.png"
+      "url": "https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/spotify.png?v=2"
     },
     {
       "name": "Apple",
-      "url": "https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/apple.png"
+      "url": "https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/apple.png?v=2"
     },
     {
       "name": "Microsoft",
-      "url": "https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/microsoft.png"
+      "url": "https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/microsoft.png?v=2"
     },
     {
       "name": "下载",
-      "url": "https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/download.png"
+      "url": "https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/download.png?v=2"
     },
     {
       "name": "香港",
-      "url": "https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/hong-kong.png"
+      "url": "https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/hong-kong.png?v=2"
     },
     {
       "name": "日本",
-      "url": "https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/japan.png"
+      "url": "https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/japan.png?v=2"
     },
     {
       "name": "美国",
-      "url": "https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/united-states.png"
+      "url": "https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/united-states.png?v=2"
     },
     {
       "name": "新加坡",
-      "url": "https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/singapore.png"
+      "url": "https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/singapore.png?v=2"
     },
     {
       "name": "台湾",
-      "url": "https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/taiwan.png"
+      "url": "https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/taiwan.png?v=2"
     }
   ]
 }

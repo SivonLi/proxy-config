@@ -39,7 +39,7 @@ AI 使用 Apple 开发者网站的 Apple Intelligence 图标，Lark 使用官方
 pwsh -File stash/icons/build.ps1 -Magick magick
 ```
 
-脚本使用 PowerShell 7 下载来源图片，等比例缩放到 176 × 176 像素区域，放置在 232 × 232 像素的白色圆角底板上。全部图片共用 52 像素圆角和 12 像素透明外边距。Spotify 取自官方资源中完整的圆形标志区域，裁剪位置记录在 `sources.json`。源文件缓存在 `.work/icon-sources/`，生成结果保存在 `icons/rounded/`。
+脚本使用 PowerShell 7 下载来源图片，等比例缩放到 176 × 176 像素区域，在 sRGB 色彩空间中合成到 232 × 232 像素的白色圆角底板上。全部图片共用 52 像素圆角和 12 像素透明外边距。Spotify 取自官方资源中完整的圆形标志区域，裁剪位置记录在 `sources.json`。源文件缓存在 `.work/icon-sources/`，生成结果保存在 `icons/rounded/`。图片地址的 `v` 参数用于更新客户端缓存。
 
 ## 分流行为
 
@@ -138,7 +138,7 @@ python stash/check_config.py --online --proxy http://127.0.0.1:7890
 
 2026-11-04 完成以下检查：
 
-- 8 项本地检查通过，涵盖主配置与覆写的 YAML 解析、重复键、分组引用、地区过滤表达式、DNS 加密、国内规则顺序、订阅参数声明和图标集文件引用。
+- 9 项本地检查通过，涵盖主配置与覆写的 YAML 解析、重复键、分组引用、地区过滤表达式、DNS 加密、国内规则顺序、订阅参数声明、图标集文件引用和图片颜色与圆角轮廓。
 - 全部上游均为 HTTPS DNS，两个 IPv6 解析开关关闭，53 端口提前拦截位于全部分流规则之前。
 - 23 个远程集合与 3 个 inline 集合验证通过，合计 12,918 条记录；规则类型、引用和 CIDR 格式检查通过。
 - 山姆的 `api-sams.walmartmobile.cn`、`decoration-sams.walmartmobile.cn` 通过国内 DoH 返回 `157.148.16.212`，属于 Sukka 中国 IP 集合。

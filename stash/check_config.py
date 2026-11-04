@@ -13,6 +13,7 @@ import dns.message
 import dns.rcode
 import dns.rdatatype
 import requests
+from PIL import Image, ImageChops
 from ruamel.yaml import YAML
 
 
@@ -26,6 +27,26 @@ CF_DOH = "https://1.1.1.1/dns-query"
 
 
 class ConfigTests(unittest.TestCase):
+    def test_icon_colors_and_shape(self):
+        sources = json.loads((ROOT / "icons/sources.json").read_text(encoding="utf-8"))
+        reference_alpha = None
+        for source in sources:
+            with self.subTest(icon=source["id"]):
+                with Image.open(ROOT / "icons/rounded" / (source["id"] + ".png")) as icon:
+                    self.assertEqual(icon.format, "PNG")
+                    self.assertEqual(icon.size, (256, 256))
+                    red, green, blue, alpha = icon.convert("RGBA").split()
+                self.assertEqual(alpha.getbbox(), (12, 12, 244, 244))
+                if reference_alpha is None:
+                    reference_alpha = alpha
+                self.assertIsNone(ImageChops.difference(alpha, reference_alpha).getbbox())
+                if source["id"] != "apple":
+                    color_range = ImageChops.lighter(
+                        ImageChops.difference(red, green),
+                        ImageChops.difference(green, blue),
+                    )
+                    self.assertGreater(sum(color_range.histogram()[16:]), 256)
+
     def test_icon_set(self):
         icon_set = json.loads((ROOT / "icons/stash.json").read_text(encoding="utf-8"))
         sources = json.loads((ROOT / "icons/sources.json").read_text(encoding="utf-8"))
@@ -40,7 +61,7 @@ class ConfigTests(unittest.TestCase):
         self.assertEqual(expected_files, {path.name for path in (ROOT / "icons/rounded").glob("*.png")})
         for source in sources:
             filename = source["id"] + ".png"
-            self.assertEqual(icons[source["name"]], base_url + filename)
+            self.assertEqual(icons[source["name"]], base_url + filename + "?v=2")
             self.assertGreater((ROOT / "icons/rounded" / filename).stat().st_size, 0)
             self.assertEqual(urlsplit(source["url"]).scheme, "https")
 

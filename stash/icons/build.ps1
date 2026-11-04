@@ -50,11 +50,12 @@ foreach ($source in $sources) {
     $prepareArguments = @('-background', 'white', $sourcePath) + $cropArguments + @(
         '-alpha', 'remove', '-alpha', 'off',
         '-fuzz', '2%', '-trim', '+repage', '-filter', 'Lanczos',
-        '-resize', $symbolGeometry, '-strip', $symbolPath
+        '-resize', $symbolGeometry, '-colorspace', 'sRGB', '-strip', $symbolPath
     )
     Invoke-Magick -Arguments $prepareArguments
     Invoke-Magick -Arguments @(
-        $maskPath, $symbolPath, '-gravity', 'center', '-compose', 'over', '-composite',
+        $maskPath, '-colorspace', 'sRGB', '-type', 'TrueColorAlpha',
+        $symbolPath, '-gravity', 'center', '-compose', 'over', '-composite',
         '-colorspace', 'sRGB', '-depth', '8', '-strip', "PNG32:$outputPath"
     )
     Write-Output "已生成 $($source.name): $outputPath"
