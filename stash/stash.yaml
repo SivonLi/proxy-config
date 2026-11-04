@@ -1,4 +1,4 @@
-# iOS 3.7+ / macOS 4.4+；在 airport.stoverride 的“参数”页面填写机场订阅地址。
+# iOS 3.7+ / macOS 4.4+；在本文件的 proxy-providers.airport.url 填写机场订阅地址。
 mode: rule
 log-level: warning
 # Stash 自身仅解析 IPv4；IPv6 流量接管仍需启用 Tunnel IPv6 路由。
@@ -21,7 +21,7 @@ dns:
 
 proxy-providers:
   airport:
-    # 通过 airport.stoverride 参数填写 Clash 订阅，也可在本地副本中替换此地址。
+    # 在本地副本中填写完整 HTTPS Clash 订阅地址，保留两侧的单引号。
     url: 'https://example.invalid/replace-with-your-clash-subscription'
     path: ./providers/airport.yaml
     interval: 86400

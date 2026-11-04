@@ -19,7 +19,6 @@ from ruamel.yaml import YAML
 
 ROOT = Path(__file__).resolve().parent
 CONFIG = YAML(typ="safe").load(ROOT / "stash.yaml")
-AIRPORT_OVERRIDE = YAML(typ="safe").load(ROOT / "airport.stoverride")
 RULES = list(csv.reader(CONFIG["rules"]))
 PROVIDERS = CONFIG["rule-providers"]
 ALI_DOH = "https://223.5.5.5/dns-query"
@@ -158,44 +157,17 @@ class ConfigTests(unittest.TestCase):
             self.assertIn(address.port, {None, 443})
             ipaddress.ip_address(address.hostname)
 
-    def test_private_subscription_parameter(self):
-        self.assertEqual(AIRPORT_OVERRIDE["arguments-version"], 1)
-        arguments = AIRPORT_OVERRIDE["arguments"]
-        self.assertEqual(set(arguments), {"subscription_url"})
-        parameter = arguments["subscription_url"]
-        self.assertEqual(parameter["type"], "input")
-        self.assertTrue(parameter["required"])
-        self.assertNotIn("default", parameter)
-        self.assertLessEqual(parameter["min-length"], parameter["max-length"])
-        body = {key: value for key, value in AIRPORT_OVERRIDE.items()
-                if key not in {"name", "desc", "arguments-version", "arguments"}}
-        self.assertEqual(body, {"proxy-providers": {"airport": {"url": "${args.subscription_url}"}}})
-        self.assertIn("airport", CONFIG["proxy-providers"])
-        self.assertEqual(urlsplit(CONFIG["proxy-providers"]["airport"]["url"]).hostname, "example.invalid")
-
-    def test_airport_main_override(self):
-        override = YAML(typ="safe").load(ROOT / "stash.stoverride")
-        self.assertNotIn("proxies", override)
-        self.assertNotIn("proxy-providers", override)
-        self.assertNotIn("arguments", override)
-        for field in ["mode", "log-level", "ipv6", "dns", "rules", "rule-providers"]:
-            self.assertEqual(override[field], CONFIG[field], field)
-        groups = override["proxy-groups"]
-        self.assertEqual(len(groups), len(CONFIG["proxy-groups"]))
-        for group, original in zip(groups, CONFIG["proxy-groups"]):
-            expected = dict(original)
-            if original["type"] == "url-test":
-                del expected["use"]
-                expected["include-all"] = True
-            self.assertEqual(group, expected, original["name"])
-
-    def test_airport_main_replace_directives(self):
-        override = YAML().load(ROOT / "stash.stoverride")
-        for field in ["dns", "proxy-groups", "rule-providers", "rules"]:
-            comment = override.ca.items[field][2]
-            self.assertIsNotNone(comment, field)
-            self.assertEqual(comment.start_mark.line, override.lc.key(field)[0], field)
-            self.assertEqual(comment.value.splitlines()[0].strip(), "#!replace", field)
+    def test_subscription_provider(self):
+        self.assertEqual(set(CONFIG["proxy-providers"]), {"airport"})
+        provider = CONFIG["proxy-providers"]["airport"]
+        self.assertEqual(provider["url"], "https://example.invalid/replace-with-your-clash-subscription")
+        self.assertEqual(provider["interval"], 86400)
+        self.assertFalse(CONFIG.get("proxies"))
+        for group in CONFIG["proxy-groups"]:
+            if group["type"] == "url-test":
+                self.assertEqual(group["use"], ["airport"])
+                self.assertNotIn("include-all", group)
+                self.assertNotIn("use-url", group)
 
     def test_references_and_service_order(self):
         groups = {item["name"] for item in CONFIG["proxy-groups"]}
