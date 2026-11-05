@@ -1,6 +1,6 @@
 {
   "name": "Sivon Stash 圆角图标",
-  "description": "16 个策略组图标，统一彩色圆角方形，包含韩国、欧洲与手动选择的其他地区。",
+  "description": "15 个策略组图标，统一彩色圆角方形，包含韩国、欧洲与手动选择的其他地区。",
   "icons": [
     {
       "name": "默认代理",
@@ -25,10 +25,6 @@
     {
       "name": "下载",
       "url": "https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/download.png?v=2"
-    },
-    {
-      "name": "GitLab",
-      "url": "https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/gitlab.png?v=2"
     },
     {
       "name": "测速",

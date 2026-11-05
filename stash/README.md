@@ -15,7 +15,7 @@ https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/stash.yaml
 https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/airport.stoverride
 ```
 
-AI 初始选择美国，GitLab 和 Lark 初始选择日本。AI 与 GitLab 的选项排除香港。Apple、Microsoft 和测速初始选择 `DIRECT`。下载初始选择香港，可手动选择 `DIRECT`。
+AI 初始选择新加坡，选项排除香港。Lark 仅提供日本和“默认代理”，初始选择日本。Apple 和 Microsoft 仅提供 `DIRECT` 与“默认代理”，初始选择 `DIRECT`。下载仅提供“默认代理”与 `DIRECT`，初始选择“默认代理”。测速初始选择 `DIRECT`，可以手动选择地区。
 
 香港、日本、美国、新加坡、台湾、韩国和欧洲根据测速结果自动选择节点。欧洲包含英国、德国、荷兰等节点。“其他地区”使用 `select`，由你手动指定节点，通过 `interval: -1` 关闭该组的定时测速。它收纳上述地区以外的节点，过滤流量余额、套餐到期和重置时间等订阅提示项。
 
@@ -53,7 +53,7 @@ DNS、策略组、规则集合、分流规则和图标由主配置管理。每�
 
 ## 图标集
 
-全部 16 个策略组使用仓库内的圆角方形 PNG。图标为 256 × 256 像素，统一白色底板、透明外边缘和标志区域，保留应用标志原色。配置通过 `icon` 字段引用图片，符合 [Stash 策略组图标文档](https://stash.wiki/configuration/proxy-group-icon)。
+全部 15 个策略组使用仓库内的圆角方形 PNG。图标为 256 × 256 像素，统一白色底板、透明外边缘和标志区域，保留应用标志原色。配置通过 `icon` 字段引用图片，符合 [Stash 策略组图标文档](https://stash.wiki/configuration/proxy-group-icon)。
 
 [一键导入 Stash 图标集](https://link.stash.ws/install-icon-set/raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/stash.json)。也可以在图标集导入页面填写此地址：
 
@@ -61,11 +61,11 @@ DNS、策略组、规则集合、分流规则和图标由主配置管理。每�
 https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/stash.json
 ```
 
-[stash.json](icons/stash.json) 包含全部 16 个策略组的图标名称和 HTTPS 地址，图片保存在 [icons/rounded](icons/rounded)。`stash.yaml` 已引用这些图片；更新主配置即可使用，导入图标集后也可以在其他配置中手动选择。导入链接依据 [Stash URL Schema 文档](https://stash.wiki/faq/url-schema)。
+[stash.json](icons/stash.json) 包含全部 15 个策略组的图标名称和 HTTPS 地址，图片保存在 [icons/rounded](icons/rounded)。`stash.yaml` 已引用这些图片；更新主配置即可使用，导入图标集后也可以在其他配置中手动选择。导入链接依据 [Stash URL Schema 文档](https://stash.wiki/faq/url-schema)。
 
 AI 使用 Apple 开发者网站的 Apple Intelligence 图标，Lark 使用官方 App Store 图标。Apple 和 Microsoft 使用官方 GitHub 组织标志。默认代理、下载和地区旗帜来自 [Koolson/Qure](https://github.com/Koolson/Qure)，遵循来源署名与个人非商业使用要求。各品牌图标的权利归原权利人所有，完整下载地址见 [sources.json](icons/sources.json)。
 
-GitLab 使用[官方品牌资源](https://about.gitlab.com/press/press-kit/)中的彩色标志。测速、韩国、欧洲和“其他地区”图标来自 Qure 彩色图标集。
+测速、韩国、欧洲和“其他地区”图标来自 Qure 彩色图标集。
 
 使用 ImageMagick 7 重新生成图标：
 
@@ -75,7 +75,7 @@ pwsh -File stash/icons/build.ps1 -Magick magick
 
 脚本使用 PowerShell 7 下载来源图片，等比例缩放到 176 × 176 像素区域，在 sRGB 色彩空间中合成到 232 × 232 像素的白色圆角底板上。全部图片共用 52 像素圆角和 12 像素透明外边距。源文件缓存在 `.work/icon-sources/`，生成结果保存在 `icons/rounded/`。图片地址的 `v` 参数用于更新客户端缓存。
 
-在 PowerShell 中调用脚本时，可通过 `-Id gitlab,europe` 指定需要生成的图片；添加 `-UseCachedSources` 后只读取已有来源缓存，缓存缺失时立即报告错误。
+在 PowerShell 中调用脚本时，可通过 `-Id korea,europe` 指定需要生成的图片；添加 `-UseCachedSources` 后只读取已有来源缓存，缓存缺失时立即报告错误。
 
 ## 分流行为
 
@@ -84,10 +84,12 @@ pwsh -File stash/icons/build.ps1 -Magick magick
 | 流量 | 默认出口 |
 | --- | --- |
 | `guorenpcic.com` 及其子域名 | DIRECT；Windows 配合系统代理绕过与 aTrust 路由 |
-| 秋风完整规则中的目标，公司域名除外 | REJECT，提前拦截 |
+| Sukka 与秋风拦截域名，公司域名除外 | REJECT / REJECT-DROP，提前拦截 |
+| 搜狗输入法上报域名与进程 | REJECT，普通匹配 |
+| Sukka 恶意 IP 与 DNS 劫持地址，私有地址除外 | REJECT-DROP，在 IP 阶段匹配 |
 | 局域网域名与私有地址 | DIRECT |
 | 1Password 专用服务、更新与附件 | DIRECT |
-| AI 与 Apple Intelligence | AI，初始选择美国 |
+| AI 与 Apple Intelligence | AI，初始选择新加坡 |
 | Lark 专用服务域名 | Lark，初始选择日本 |
 | Spotify | 通用流媒体规则，使用默认代理 |
 | 美国、欧洲、日本、韩国、香港、台湾流媒体及 Bilibili 国际版 | 直接使用对应节点组，见下表 |
@@ -97,8 +99,7 @@ pwsh -File stash/icons/build.ps1 -Magick magick
 | 其他 Apple 服务 | Apple，初始为 DIRECT |
 | Microsoft CDN | DIRECT |
 | 其他 Microsoft 服务 | Microsoft，初始为 DIRECT |
-| 规则中的下载站点 | 下载，初始选择香港，可选择 DIRECT |
-| GitLab 公共服务 | GitLab，初始选择日本 |
+| 规则中的下载站点与 IP | 下载，初始选择默认代理，可选择 DIRECT |
 | Speedtest 等测速服务 | 测速，初始为 DIRECT，可手动选择地区 |
 | 网易云音乐域名与专用 IP | DIRECT |
 | 通用 CDN 域名与 IP | 默认代理；服务专用规则和国内域名优先 |
@@ -147,7 +148,7 @@ Netflix、Disney+、YouTube 等通用服务继续使用默认代理。测速集�
 
 ### Sukka 规则覆盖
 
-配置直接引用 39 个 Sukka 集合。公共分流覆盖通用服务、CDN、下载、测速、GitLab、六个地区的流媒体、Bilibili 国际版、网易云 IP、Telegram CIDR 与 ASN，以及 Fake-IP 真实地址例外。大型域名列表使用 `domain`，中国地址使用 `ipcidr`；包含关键词、通配符、进程名或 ASN 的集合保留上游 `classical` 格式。
+配置直接引用 46 个 Sukka 集合。公共分流覆盖通用服务、CDN、下载、测速、六个地区的流媒体、Bilibili 国际版、网易云 IP、Telegram CIDR 与 ASN，以及 Fake-IP 真实地址例外。拦截包含基础域名、扩展域名、钓鱼网站、关键词与通配符、高频重试、PCDN、搜狗输入法和恶意 IP。大型域名列表使用 `domain`，中国地址使用 `ipcidr`；包含关键词、通配符、进程名或 ASN 的集合保留上游 `classical` 格式。
 
 以下公共子集通过已有集合覆盖，并沿用对应出口：
 
@@ -159,19 +160,35 @@ Netflix、Disney+、YouTube 等通用服务继续使用默认代理。测速集�
 | `icloud_private_relay` 域名 | Apple 规则，初始为 DIRECT |
 | `teleproto` | 与 `telegram` IP 集合相同，使用默认代理 |
 
-七个地区流媒体 IP 文件当前只有作者标识条目。通用流媒体 IP 集合提供实际 IP 分流。去广告使用秋风完整规则，Sukka 的个人 `my_*`、额外拦截和 Surge 模块不在这份公共分流配置的覆盖范围内。规则来自持续更新的上游，覆盖范围需要随集合内容变化检查。
+地区流媒体使用各自的域名集合，通用流媒体 IP 集合提供实际 IP 分流。去广告与隐私保护同时使用 Sukka 公共拦截集合和秋风完整规则。规则来自持续更新的上游，覆盖范围需要随集合内容变化检查。
 
 ## 去广告
 
-主配置通过 `awavenue` 规则集合订阅 [AWAvenue 秋风完整规则](https://github.com/TG-Twilight/AWAvenue-Ads-Rule)。使用官方的 `AWAvenue-Ads-Rule-Clash-Classical.yaml`，保留精确域名、域名后缀和关键词条目。规则每 86400 秒更新一次，并保存本地缓存。
+主配置订阅 [Sukka 公共拦截规则](https://github.com/SukkaW/Surge#readme)和 [AWAvenue 秋风完整规则](https://github.com/TG-Twilight/AWAvenue-Ads-Rule)。全部集合每 86400 秒更新一次，并保存本地缓存。
 
-完整规则包含广告、隐私跟踪和“不受欢迎”三类，后者涉及部分推送、强制更新、云控与 PCDN 服务。命中的请求会被拒绝，因此相关应用的通知、更新或其他功能可能受到影响。拦截范围随上游更新；该配置无需为去广告启用 HTTPS 解密或脚本。
+| 配置中的集合 | 拦截内容 | 处理方式 |
+| --- | --- | --- |
+| `reject-domain` | 基础广告、跟踪与恶意域名 | domain，REJECT 提前拒绝 |
+| `reject-extra` | 基础集合的扩展域名 | domain，REJECT 提前拒绝 |
+| `reject-phishing` | 钓鱼网站域名 | domain，REJECT 提前拒绝 |
+| `reject` | 域名、关键词、通配符及无需解析的 IP | classical，REJECT 提前拒绝 |
+| `reject-drop` | 高频重试的统计与推送域名 | classical，REJECT-DROP，优先提前拦截 |
+| `reject-no-drop` | PCDN 等需要立即拒绝的目标 | classical，使用 Stash 的 REJECT 提前拒绝 |
+| `sogouinput` | 搜狗输入法上报域名与进程 | classical，普通 REJECT |
+| `reject-ip` | 恶意 IP 与 DNS 劫持地址 | classical，IP 阶段 REJECT-DROP |
+| `awavenue` | 秋风完整规则 | 官方 classical YAML，REJECT 提前拒绝 |
 
-拦截规则使用 `REJECT,pre-matching`。在能够匹配域名的 DNS 阶段返回空应答；其他符合条件的连接在入口阶段提前拒绝，减少连接处理。使用条件与匹配阶段见 [Stash 规则类型文档](https://stash.wiki/rules/rule-types)。
+三份 Sukka `domain` 集合当前合计约 36.9 万条，首次下载的文本约 8.3 MB。大型集合会增加下载量与内存占用，iOS、macOS 和 Windows 的实际资源占用尚未测量。每日更新、本地缓存和提前拒绝用于控制重复下载与连接处理。
+
+秋风完整规则包含广告、隐私跟踪和“不受欢迎”三类，后者涉及部分推送、强制更新、云控与 PCDN 服务。Sukka 的搜狗输入法集合也会影响账号同步、词库更新与问题反馈。命中的请求会被拒绝，因此相关应用的通知、更新或其他功能可能受到影响。拦截范围随上游更新；该配置无需为去广告启用 HTTPS 解密或脚本。
+
+域名拦截使用 `pre-matching`。在能够匹配域名的 DNS 阶段返回空应答；其他符合条件的连接在入口阶段提前拒绝，减少连接处理。`reject-drop` 优先于其他拦截集合，使用 `REJECT-DROP` 静默丢弃连接。使用条件与匹配阶段见 [Stash 规则类型文档](https://stash.wiki/rules/rule-types)。
+
+搜狗输入法集合含 `PROCESS-NAME`，采用普通匹配；iOS 忽略进程条目。`reject-ip` 在全部域名规则和局域网 IP 直连规则之后执行，通过 `no-resolve` 复用已经获取的地址。公司域名和私有地址继续优先直连。
 
 广告条件明确排除 `corporate-domains`，公司域名继续使用系统 DNS 和 `DIRECT`。提前拦截独立于普通规则顺序：其他 `DIRECT` 规则不能放行已被提前拦截的目标。DNS 的 53 端口限制仍按原有范围生效。
 
-在“远程资源”查看 `awavenue` 的更新时间，确认规则已加载。提前拒绝的请求不进入连接列表，可通过核心日志中的 `pre-matched` 记录，或 [HTTP API](https://stash.wiki/features/http-api) 的 `/rules/match` 查询目标、命中规则和 `stage`。排查功能异常时需要记录实际请求域名和命中结果。
+在“远程资源”查看上述集合的更新时间，确认规则已加载。提前拒绝的请求不进入连接列表，可通过核心日志中的 `pre-matched` 记录，或 [HTTP API](https://stash.wiki/features/http-api) 的 `/rules/match` 查询目标、命中规则和 `stage`。排查功能异常时需要记录实际请求域名和命中结果。
 
 ## 公司 VPN（Windows）
 
@@ -192,7 +209,7 @@ Netflix、Disney+、YouTube 等通用服务继续使用默认代理。测速集�
 | 命中代理域名规则的 TCP 连接 | 将目标域名交给代理节点解析 | 对应策略组最终选中的节点 |
 | UDP 代理连接的目标域名 | Stash 经代理查询，默认使用 `1.0.0.1` | 对应代理节点 |
 
-Fake-IP 把应用得到的地址与目标域名关联起来。对于支持域名转发的代理 TCP 连接，节点使用自己的 DNS 解析目标，让 CDN 按代理出口调度。Lark 选择日本、AI 选择美国时，各自通过对应节点解析和访问。Apple、Microsoft 或下载选择 `DIRECT` 时，使用国内 DoH 获取适合本地出口的地址。原理参考 [Sukka 关于 DNS、CDN 与 Fake-IP 的文章](https://blog.skk.moe/post/lets-talk-about-dns-cdn-fake-ip/)，Stash 官方也在[性能建议](https://stash.wiki/faq/effective-stash)中推荐中国用户使用国内 DNS。
+Fake-IP 把应用得到的地址与目标域名关联起来。对于支持域名转发的代理 TCP 连接，节点使用自己的 DNS 解析目标，让 CDN 按代理出口调度。Lark 选择日本、AI 选择新加坡时，各自通过对应节点解析和访问。Apple、Microsoft 或下载选择 `DIRECT` 时，使用国内 DoH 获取适合本地出口的地址。原理参考 [Sukka 关于 DNS、CDN 与 Fake-IP 的文章](https://blog.skk.moe/post/lets-talk-about-dns-cdn-fake-ip/)，Stash 官方也在[性能建议](https://stash.wiki/faq/effective-stash)中推荐中国用户使用国内 DNS。
 
 IP 规则阶段得到的地址用于判断出口。使用支持域名转发的 TCP 代理时，最终仍交给节点解析目标。DNS 服务器使用 IP 地址，机场节点域名通过独立通道解析，启动代理不依赖已经建立的代理连接。
 
@@ -247,11 +264,11 @@ python stash/check_config.py --online --proxy http://127.0.0.1:7890
 
 本地配置与上游联网检查最近验证于 2026-11-05：
 
-- 12 项本地检查通过，涵盖主配置与机场模板的 YAML 解析、重复键、分组引用、地区过滤表达式、内置 DNS 加密、Fake-IP 例外、域名与 IP 规则顺序、流媒体优先级、机场覆写范围和图标集。
+- 13 项本地检查通过，涵盖主配置与机场模板的 YAML 解析、重复键、分组引用、地区过滤表达式、内置 DNS 加密、Fake-IP 例外、域名与 IP 规则顺序、流媒体优先级、Sukka 拦截覆盖与公司域名豁免、机场覆写范围和图标集。
 - 8 个节点分类通过 `include-all: true` 汇集节点，7 个地区自动测速，“其他地区”手动选择。主配置的 `proxy-providers` 为空字典。机场模板只定义一个代理集及展示字段，名称通过 YAML 锚点复用，订阅地址为占位值。
 - 公共 DNS 上游均为 HTTPS DNS，只有公司域名 policy 使用 `system`。`follow-rule` 关闭，两个 IPv6 解析开关关闭，53 端口提前拦截位于全部分流规则之前。
-- 配置包含 40 个远程集合与 3 个 inline 集合，引用检查通过。远程集合已通过规则类型和 CIDR 格式检查；Sukka `non_ip` 集合中附带的 IP 条目均包含 `no-resolve`，不会自行触发域名解析。
-- 地区流媒体直接引用相应节点组，通用流媒体引用默认代理；主配置与图标集包含 16 个展示组，引用检查确认全部目标有效。
+- 配置包含 47 个远程集合与 3 个 inline 集合，引用检查通过。远程集合已通过规则类型和 CIDR 格式检查；Sukka `non_ip` 集合中附带的 IP 条目均包含 `no-resolve`，不会自行触发域名解析。
+- 地区流媒体直接引用相应节点组，通用流媒体引用默认代理；主配置与图标集包含 15 个展示组，引用检查确认全部目标有效。
 - “其他地区”的节点过滤与各自动地区组互不重复，订阅提示项从该分类排除。韩国和欧洲流媒体分别引用对应地区组，英国、德国、荷兰等节点统一归入欧洲。
 - 秋风完整规则下载与 YAML 解析通过，Windows 已加载全部 976 条，包含 960 条精确域名、12 条域名后缀和 4 条关键词规则。`ad-api.4pyun.com` 与 `unityads.unity3d.com` 在规则诊断中命中提前拒绝，广告条件明确排除公司域名集合。
 - 公司 VPN 设置已在 Windows 0.1.47 验证。公司域名命中 `corporate-domains`，Stash DNS API 确认解析来源为 `system`。本机使用系统代理绕过和 5 条隧道网段排除，内网 HTTP 请求返回 `200`。

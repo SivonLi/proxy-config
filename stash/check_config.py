@@ -23,8 +23,20 @@ AIRPORT_TEMPLATE = YAML(typ="safe").load(ROOT / "airport.stoverride")
 RULES = list(csv.reader(CONFIG["rules"]))
 PROVIDERS = CONFIG["rule-providers"]
 ALI_DOH = "https://223.5.5.5/dns-query"
-AD_RULE = "AND,((RULE-SET,awavenue),(NOT,((RULE-SET,corporate-domains)))),REJECT,pre-matching"
-AD_RULE_FIELDS = next(csv.reader([AD_RULE]))
+PREMATCH_REJECTS = {
+    "reject-drop": "REJECT-DROP",
+    "reject-domain": "REJECT",
+    "reject-extra": "REJECT",
+    "reject-phishing": "REJECT",
+    "reject": "REJECT",
+    "reject-no-drop": "REJECT",
+    "awavenue": "REJECT",
+}
+PREMATCH_RULES = {
+    name: next(csv.reader([
+        f"AND,((RULE-SET,{name}),(NOT,((RULE-SET,corporate-domains)))),{policy},pre-matching"
+    ])) for name, policy in PREMATCH_REJECTS.items()
+}
 STREAM_POLICIES = {
     "stream-us": "美国",
     "stream-eu": "欧洲",
@@ -128,21 +140,49 @@ class ConfigTests(unittest.TestCase):
         self.assertEqual(len(paths), len(set(paths)))
         self.assertFalse({"DOMAIN", "DOMAIN-SUFFIX", "DOMAIN-WILDCARD"} & {rule[0] for rule in RULES})
 
+    def test_sukka_reject_rules(self):
+        sources = {
+            "reject-domain": ("domainset/reject.txt", "domain"),
+            "reject-extra": ("domainset/reject_extra.txt", "domain"),
+            "reject-phishing": ("domainset/reject_phishing.txt", "domain"),
+            "reject": ("non_ip/reject.txt", "classical"),
+            "reject-drop": ("non_ip/reject-drop.txt", "classical"),
+            "reject-no-drop": ("non_ip/reject-no-drop.txt", "classical"),
+            "sogouinput": ("non_ip/sogouinput.txt", "classical"),
+            "reject-ip": ("ip/reject.txt", "classical"),
+        }
+        for name, (path, behavior) in sources.items():
+            with self.subTest(provider=name):
+                self.assertIn(name, PROVIDERS)
+                self.assertEqual(PROVIDERS[name]["url"], "https://ruleset.skk.moe/Clash/" + path)
+                self.assertEqual(PROVIDERS[name]["behavior"], behavior)
+                self.assertEqual(PROVIDERS[name]["interval"], 86400)
+        for name, rule in PREMATCH_RULES.items():
+            self.assertIn(rule, RULES, name)
+            self.assertLess(RULES.index(rule), RULES.index(["RULE-SET", "onepassword", "DIRECT"]))
+        drop = RULES.index(PREMATCH_RULES["reject-drop"])
+        self.assertTrue(all(drop < RULES.index(rule) for name, rule in PREMATCH_RULES.items()
+                            if name != "reject-drop"))
+        process_rule = ["RULE-SET", "sogouinput", "REJECT"]
+        self.assertLess(RULES.index(["RULE-SET", "corporate-domains", "DIRECT"]), RULES.index(process_rule))
+        self.assertLess(RULES.index(process_rule), RULES.index(["RULE-SET", "onepassword", "DIRECT"]))
+        ip_rule = ["RULE-SET", "reject-ip", "REJECT-DROP", "no-resolve"]
+        self.assertLess(RULES.index(["RULE-SET", "lan-ip", "DIRECT"]), RULES.index(ip_rule))
+        self.assertLess(RULES.index(ip_rule), RULES.index(["RULE-SET", "ai-ip", "AI", "no-resolve"]))
+
     def test_group_choices(self):
         groups = {item["name"]: item for item in CONFIG["proxy-groups"]}
         self.assertEqual(len(groups), len(CONFIG["proxy-groups"]))
         regions = {"香港", "日本", "美国", "新加坡", "台湾", "韩国", "欧洲", "其他地区"}
         self.assertEqual(set(groups["默认代理"]["proxies"]), regions)
-        self.assertEqual(set(groups["下载"]["proxies"]), regions | {"DIRECT"})
-        self.assertEqual(groups["下载"]["proxies"][0], "香港")
+        self.assertEqual(groups["下载"]["proxies"], ["默认代理", "DIRECT"])
         self.assertEqual(set(groups["AI"]["proxies"]), regions - {"香港"})
-        self.assertEqual(set(groups["GitLab"]["proxies"]), regions - {"香港"})
-        self.assertEqual(groups["GitLab"]["proxies"][0], "日本")
-        self.assertEqual(set(groups["Lark"]["proxies"]), regions)
-        self.assertEqual(groups["Lark"]["proxies"][0], "日本")
-        for name in ["Apple", "Microsoft", "测速"]:
-            self.assertEqual(groups[name]["proxies"][0], "DIRECT")
-            self.assertEqual(set(groups[name]["proxies"]), regions | {"DIRECT"})
+        self.assertEqual(groups["AI"]["proxies"][0], "新加坡")
+        self.assertEqual(groups["Lark"]["proxies"], ["日本", "默认代理"])
+        for name in ["Apple", "Microsoft"]:
+            self.assertEqual(groups[name]["proxies"], ["DIRECT", "默认代理"])
+        self.assertEqual(groups["测速"]["proxies"][0], "DIRECT")
+        self.assertEqual(set(groups["测速"]["proxies"]), regions | {"DIRECT"})
         self.assertNotIn("Telegram", groups)
         self.assertNotIn("Spotify", groups)
         self.assertFalse(any("流媒体" in name or "Bilibili" in name for name in groups))
@@ -177,7 +217,8 @@ class ConfigTests(unittest.TestCase):
         self.assertFalse(settings["follow-rule"])
         self.assertNotIn("fallback", settings)
         self.assertEqual(RULES[0], ["DST-PORT", "53", "REJECT", "pre-matching"])
-        self.assertEqual([rule for rule in RULES if "pre-matching" in rule], [RULES[0], AD_RULE_FIELDS])
+        self.assertEqual([rule for rule in RULES if "pre-matching" in rule],
+                         [RULES[0], *PREMATCH_RULES.values()])
         endpoints = []
         for field in ["nameserver", "default-nameserver", "proxy-server-nameserver"]:
             self.assertEqual(len(settings[field]), 1)
@@ -220,11 +261,12 @@ class ConfigTests(unittest.TestCase):
                 if value.startswith("rule-set:")}
         for rule in RULES:
             if rule[0] == "AND":
-                self.assertEqual(rule, AD_RULE_FIELDS)
-                used.update({"awavenue", "corporate-domains"})
+                self.assertIn(rule, PREMATCH_RULES.values())
+                used.add(next(name for name, expected in PREMATCH_RULES.items() if rule == expected))
+                used.add("corporate-domains")
                 continue
             self.assertIn(rule[0], {"RULE-SET", "IP-CIDR", "DST-PORT", "DOMAIN-KEYWORD", "MATCH"})
-            self.assertIn(rule[1] if rule[0] == "MATCH" else rule[2], groups | {"DIRECT", "REJECT"})
+            self.assertIn(rule[1] if rule[0] == "MATCH" else rule[2], groups | {"DIRECT", "REJECT", "REJECT-DROP"})
             if rule[0] == "RULE-SET":
                 self.assertIn(rule[1], PROVIDERS)
                 used.add(rule[1])
@@ -234,7 +276,7 @@ class ConfigTests(unittest.TestCase):
         self.assertEqual(RULES[1], ["RULE-SET", "corporate-domains", "DIRECT"])
         self.assertEqual(PROVIDERS["corporate-domains"]["behavior"], "domain")
         self.assertEqual(PROVIDERS["corporate-domains"]["payload"], ["+.guorenpcic.com"])
-        self.assertLess(RULES.index(AD_RULE_FIELDS), RULES.index(["RULE-SET", "onepassword", "DIRECT"]))
+        self.assertLess(RULES.index(PREMATCH_RULES["awavenue"]), RULES.index(["RULE-SET", "onepassword", "DIRECT"]))
         for name in ["stream", "telegram"]:
             self.assertIn(["RULE-SET", name, "默认代理"], RULES)
         for name, target in [("lark", "Lark"),
@@ -265,9 +307,6 @@ class ConfigTests(unittest.TestCase):
         for provider in ["download-domain", "download"]:
             self.assertLess(RULES.index(["RULE-SET", "speedtest", "测速"]),
                             RULES.index(["RULE-SET", provider, "下载"]))
-        for provider in ["cdn-domain", "cdn", "global"]:
-            self.assertLess(RULES.index(["RULE-SET", "gitlab", "GitLab"]),
-                            RULES.index(["RULE-SET", provider, "默认代理"]))
         self.assertIn(["RULE-SET", "download-ip", "下载", "no-resolve"], RULES)
         self.assertIn(["RULE-SET", "neteasemusic-ip", "DIRECT", "no-resolve"], RULES)
         self.assertIn(["RULE-SET", "telegram-asn", "默认代理", "no-resolve"], RULES)
@@ -300,8 +339,14 @@ def fetch_provider(item, proxies):
         rows = list(csv.reader(entries))
         types = {row[0] for row in rows}
         assert types <= allowed, name
+        if name in PREMATCH_REJECTS:
+            assert types <= {"DOMAIN", "DOMAIN-SUFFIX", "DOMAIN-KEYWORD", "DOMAIN-WILDCARD",
+                             "IP-CIDR", "IP-CIDR6", "IP-ASN"}, name
         if name == "awavenue":
             assert types <= {"DOMAIN", "DOMAIN-SUFFIX", "DOMAIN-KEYWORD", "DOMAIN-WILDCARD"}, name
+        for row in rows:
+            if row[0] in {"IP-CIDR", "IP-CIDR6"}:
+                ipaddress.ip_network(row[1])
         if "/Clash/non_ip/" in urlsplit(provider["url"]).path:
             assert all(row[0] not in {"IP-CIDR", "IP-CIDR6", "IP-ASN"}
                        or "no-resolve" in row[2:] for row in rows), name
@@ -341,6 +386,9 @@ def check_online(proxy):
             assert all(any(address in network for network in networks) for address in addresses), domain
     print(json.dumps({"providers": len(entries), "records": sum(map(len, entries.values())),
                       "awavenue_records": len(entries["awavenue"]),
+                      "sukka_reject_records": {name: len(entries[name])
+                                               for name in [*PREMATCH_REJECTS, "sogouinput", "reject-ip"]
+                                               if name != "awavenue"},
                       "dns": [{"domain": domain, "addresses": [str(address) for address in addresses],
                                "china_addresses": sum(any(address in network for network in networks) for address in addresses)}
                               for domain, addresses in answers]}, ensure_ascii=False, indent=2))

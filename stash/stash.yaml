@@ -38,37 +38,31 @@ proxy-groups:
   - name: AI
     type: select
     icon: https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/apple-intelligence.png?v=2
-    proxies: [美国, 日本, 新加坡, 台湾, 韩国, 欧洲, 其他地区]
+    proxies: [新加坡, 美国, 日本, 台湾, 韩国, 欧洲, 其他地区]
     interval: -1
     lazy: true
   - name: Lark
     type: select
     icon: https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/lark.png?v=2
-    proxies: [日本, 香港, 美国, 新加坡, 台湾, 韩国, 欧洲, 其他地区]
+    proxies: [日本, 默认代理]
     interval: -1
     lazy: true
   - name: Apple
     type: select
     icon: https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/apple.png?v=2
-    proxies: [DIRECT, 香港, 日本, 美国, 新加坡, 台湾, 韩国, 欧洲, 其他地区]
+    proxies: [DIRECT, 默认代理]
     interval: -1
     lazy: true
   - name: Microsoft
     type: select
     icon: https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/microsoft.png?v=2
-    proxies: [DIRECT, 香港, 日本, 美国, 新加坡, 台湾, 韩国, 欧洲, 其他地区]
+    proxies: [DIRECT, 默认代理]
     interval: -1
     lazy: true
   - name: 下载
     type: select
     icon: https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/download.png?v=2
-    proxies: [香港, 日本, 美国, 新加坡, 台湾, 韩国, 欧洲, 其他地区, DIRECT]
-    interval: -1
-    lazy: true
-  - name: GitLab
-    type: select
-    icon: https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/gitlab.png?v=2
-    proxies: [日本, 美国, 新加坡, 台湾, 韩国, 欧洲, 其他地区]
+    proxies: [默认代理, DIRECT]
     interval: -1
     lazy: true
   - name: 测速
@@ -144,6 +138,49 @@ proxy-groups:
     lazy: true
 
 rule-providers:
+  # Sukka 公共拦截：大型域名集合使用 domain，其余保留官方 classical 格式。
+  reject-domain:
+    behavior: domain
+    format: text
+    url: https://ruleset.skk.moe/Clash/domainset/reject.txt
+    path: ./rules/reject-domain.txt
+    interval: 86400
+  reject-extra:
+    behavior: domain
+    format: text
+    url: https://ruleset.skk.moe/Clash/domainset/reject_extra.txt
+    path: ./rules/reject-extra.txt
+    interval: 86400
+  reject-phishing:
+    behavior: domain
+    format: text
+    url: https://ruleset.skk.moe/Clash/domainset/reject_phishing.txt
+    path: ./rules/reject-phishing.txt
+    interval: 86400
+  reject:
+    behavior: classical
+    format: text
+    url: https://ruleset.skk.moe/Clash/non_ip/reject.txt
+    path: ./rules/reject.txt
+    interval: 86400
+  reject-drop:
+    behavior: classical
+    format: text
+    url: https://ruleset.skk.moe/Clash/non_ip/reject-drop.txt
+    path: ./rules/reject-drop.txt
+    interval: 86400
+  reject-no-drop:
+    behavior: classical
+    format: text
+    url: https://ruleset.skk.moe/Clash/non_ip/reject-no-drop.txt
+    path: ./rules/reject-no-drop.txt
+    interval: 86400
+  sogouinput:
+    behavior: classical
+    format: text
+    url: https://ruleset.skk.moe/Clash/non_ip/sogouinput.txt
+    path: ./rules/sogouinput.txt
+    interval: 86400
   # 秋风完整规则包含广告、隐私跟踪与不受欢迎的服务域名。
   awavenue:
     behavior: classical
@@ -194,12 +231,6 @@ rule-providers:
     format: text
     url: https://ruleset.skk.moe/Clash/domainset/clash_fake_ip_filter.txt
     path: ./rules/fake-ip-exclude.txt
-    interval: 86400
-  gitlab:
-    behavior: classical
-    format: text
-    url: https://ruleset.skk.moe/Clash/non_ip/gitlab.txt
-    path: ./rules/gitlab.txt
     interval: 86400
   speedtest:
     behavior: domain
@@ -351,6 +382,12 @@ rule-providers:
     url: https://ruleset.skk.moe/Clash/ip/lan.txt
     path: ./rules/lan-ip.txt
     interval: 86400
+  reject-ip:
+    behavior: classical
+    format: text
+    url: https://ruleset.skk.moe/Clash/ip/reject.txt
+    path: ./rules/reject-ip.txt
+    interval: 86400
   ai-ip:
     behavior: classical
     format: text
@@ -424,8 +461,16 @@ rules:
   # 全部域名规则先于 IP 规则；命中代理的 TCP 请求交给对应节点解析。
   - RULE-SET,corporate-domains,DIRECT
   - RULE-SET,lan,DIRECT
-  # 提前拒绝完整规则中的目标；公司域名在条件内排除。
+  # 提前拦截的条件内排除公司域名；高频重试集合优先使用 REJECT-DROP。
+  - AND,((RULE-SET,reject-drop),(NOT,((RULE-SET,corporate-domains)))),REJECT-DROP,pre-matching
+  - AND,((RULE-SET,reject-domain),(NOT,((RULE-SET,corporate-domains)))),REJECT,pre-matching
+  - AND,((RULE-SET,reject-extra),(NOT,((RULE-SET,corporate-domains)))),REJECT,pre-matching
+  - AND,((RULE-SET,reject-phishing),(NOT,((RULE-SET,corporate-domains)))),REJECT,pre-matching
+  - AND,((RULE-SET,reject),(NOT,((RULE-SET,corporate-domains)))),REJECT,pre-matching
+  - AND,((RULE-SET,reject-no-drop),(NOT,((RULE-SET,corporate-domains)))),REJECT,pre-matching
   - AND,((RULE-SET,awavenue),(NOT,((RULE-SET,corporate-domains)))),REJECT,pre-matching
+  # 此集合含 PROCESS-NAME，使用普通匹配。
+  - RULE-SET,sogouinput,REJECT
   - RULE-SET,onepassword,DIRECT
   - RULE-SET,lark,Lark
   - RULE-SET,ai,AI
@@ -436,7 +481,6 @@ rules:
   - RULE-SET,apple-services,Apple
   - RULE-SET,microsoft-cdn,DIRECT
   - RULE-SET,microsoft,Microsoft
-  - RULE-SET,gitlab,GitLab
   # 日本集合先于美国集合，两者均包含 Hulu Japan。
   - RULE-SET,stream-jp,日本
   - RULE-SET,stream-us,美国
@@ -458,6 +502,8 @@ rules:
   - RULE-SET,global,默认代理
   # 未命中域名规则时，通过国内 DoH 查询真实地址，供后续 IP 规则判断。
   - RULE-SET,lan-ip,DIRECT
+  # 私有地址优先直连；拦截恶意 IP 时复用已有解析结果。
+  - RULE-SET,reject-ip,REJECT-DROP,no-resolve
   - RULE-SET,ai-ip,AI,no-resolve
   - RULE-SET,apple-services-ip,Apple,no-resolve
   - RULE-SET,stream-ip,默认代理,no-resolve
