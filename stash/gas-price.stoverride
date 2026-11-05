@@ -1,0 +1,85 @@
+name: '哈尔滨油价'
+desc: '在首页面板显示哈尔滨的中石化油价、各型号涨跌金额和更新时间，每小时刷新。'
+category: '生活信息'
+version: '1.0.0'
+
+tiles:
+  - name: harbin-gas-price
+    interval: 3600
+    title: '哈尔滨油价 · 元/升'
+    content: '等待获取中石化黑龙江南区油价'
+    icon: 'fuelpump.fill'
+    backgroundColor: '#B58428'
+    collapsed: false
+    url: https://cx.sinopecsales.com/yjkqiantai/index.html
+
+script-providers:
+  harbin-gas-price:
+    payload: |
+      // 数据流程参考 jnlaoshu/MySelf 的 Egern/Widget/GasPrice.js。
+      // 哈尔滨属于黑龙江南区，使用区域 ID，保持区域选择不受接口排序影响。
+      const base = 'https://cx.sinopecsales.com/yjkqiantai';
+      const headers = {
+        Accept: 'application/json, text/plain, */*',
+        'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148',
+        Referer: base + '/index.html',
+        Origin: 'https://cx.sinopecsales.com'
+      };
+
+      function readResponse(error, response, body) {
+        if (error) throw new Error('中石化请求失败：' + error);
+        if (!response || Number(response.status) !== 200) {
+          throw new Error('中石化接口 HTTP 状态异常：' + (response && response.status));
+        }
+        const result = JSON.parse(body);
+        if (!result || typeof result !== 'object' || Array.isArray(result)) throw new Error('中石化接口响应格式异常');
+        return result;
+      }
+
+      function readNumber(value, field) {
+        if (value === null || value === undefined || String(value).trim() === '') {
+          throw new Error('中石化接口缺少数值：' + field);
+        }
+        if (typeof value !== 'number' && typeof value !== 'string') {
+          throw new Error('中石化接口数值类型异常：' + field);
+        }
+        const number = Number(value);
+        if (!Number.isFinite(number)) throw new Error('中石化接口数值异常：' + field);
+        return number;
+      }
+
+      $httpClient.get({ url: base + '/data/initMainData', headers, timeout: 10, 'auto-cookie': true }, (error, response, body) => {
+        const initial = readResponse(error, response, body);
+        if (!initial.toDay) throw new Error('中石化接口初始化失败');
+        $httpClient.post({
+          url: base + '/data/switchProvince',
+          headers: { ...headers, 'Content-Type': 'application/json;charset=UTF-8' },
+          body: JSON.stringify({ provinceId: '23' }),
+          timeout: 10,
+          'auto-cookie': true
+        }, (error, response, body) => {
+          const data = readResponse(error, response, body).data;
+          if (!data || !Array.isArray(data.area)) throw new Error('中石化接口缺少区域列表');
+          const area = data.area.find(item => Number(item.areaCheck && item.areaCheck.AREA_ID) === 23002);
+          if (!area || Number(area.areaCheck.PROVINCE_ID) !== 23 || !String(area.areaCheck.AREA_DESC).includes('哈尔滨')) {
+            throw new Error('中石化接口缺少哈尔滨对应区域');
+          }
+          const priceData = area.areaData;
+          if (!priceData || !/^\d{4}-\d{2}-\d{2}/.test(priceData.START_DATE || '')) {
+            throw new Error('中石化接口缺少油价或生效日期');
+          }
+          const fuels = [['GAS_92', 'GAS_92', '92号'], ['GAS_95', 'GAS_95', '95号'], ['GAS_98', 'GAS_98', '98号'], ['CHAI_0', 'CHECHAI_0', '0号柴油']];
+          const lines = fuels.map(([flag, key, label]) => {
+            if (area.areaCheck[flag] !== 'Y') throw new Error('中石化接口未提供油品：' + label);
+            const price = readNumber(priceData[key], key);
+            if (price <= 0) throw new Error('中石化接口价格异常：' + label);
+            const delta = readNumber(priceData[key + '_STATUS'], key + '_STATUS');
+            const change = delta === 0 ? '持平' : (delta > 0 ? '↑ +' : '↓ -') + Math.abs(delta).toFixed(2);
+            return label + '  ' + price.toFixed(2) + '  ' + change;
+          });
+          const updatedAt = new Date(Date.now() + 8 * 3600000).toISOString().slice(5, 16).replace('T', ' ');
+          lines.push('生效：' + priceData.START_DATE.slice(0, 10));
+          lines.push('更新：' + updatedAt + '（北京时间）');
+          $done({ title: '哈尔滨油价 · 元/升', content: lines.join('\n'), icon: 'fuelpump.fill', url: base + '/index.html' });
+        });
+      });
