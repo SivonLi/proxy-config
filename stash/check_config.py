@@ -26,13 +26,13 @@ ALI_DOH = "https://223.5.5.5/dns-query"
 AD_RULE = "AND,((RULE-SET,awavenue),(NOT,((RULE-SET,corporate-domains)))),REJECT,pre-matching"
 AD_RULE_FIELDS = next(csv.reader([AD_RULE]))
 STREAM_POLICIES = {
-    "stream-us": ("美国流媒体", "美国"),
-    "stream-eu": ("欧洲流媒体", "欧洲"),
-    "stream-jp": ("日本流媒体", "日本"),
-    "stream-kr": ("韩国流媒体", "韩国"),
-    "stream-hk": ("香港流媒体", "香港"),
-    "stream-tw": ("台湾流媒体", "台湾"),
-    "stream-biliintl": ("东南亚流媒体", "新加坡"),
+    "stream-us": "美国",
+    "stream-eu": "欧洲",
+    "stream-jp": "日本",
+    "stream-kr": "韩国",
+    "stream-hk": "香港",
+    "stream-tw": "台湾",
+    "stream-biliintl": "台湾",
 }
 
 
@@ -65,16 +65,13 @@ class ConfigTests(unittest.TestCase):
         icons = {item["name"]: item["url"] for item in icon_set["icons"]}
         self.assertEqual(len(icons), len(icon_set["icons"]))
         self.assertEqual(icons, {group["name"]: group["icon"] for group in CONFIG["proxy-groups"]})
-        source_groups = [name for source in sources for name in source.get("groups", [source["name"]])]
-        self.assertEqual(set(icons), set(source_groups))
-        self.assertEqual(len(source_groups), len(set(source_groups)))
+        self.assertEqual(set(icons), {source["name"] for source in sources})
         base_url = "https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/"
         expected_files = {source["id"] + ".png" for source in sources}
         self.assertEqual(expected_files, {path.name for path in (ROOT / "icons/rounded").glob("*.png")})
         for source in sources:
             filename = source["id"] + ".png"
-            for name in source.get("groups", [source["name"]]):
-                self.assertEqual(icons[name], base_url + filename + "?v=2")
+            self.assertEqual(icons[source["name"]], base_url + filename + "?v=2")
             self.assertGreater((ROOT / "icons/rounded" / filename).stat().st_size, 0)
             self.assertEqual(urlsplit(source["url"]).scheme, "https")
 
@@ -116,7 +113,7 @@ class ConfigTests(unittest.TestCase):
 
     def test_ruleset_sources(self):
         inline = {name for name, provider in PROVIDERS.items() if provider.get("type") == "inline"}
-        self.assertEqual(inline, {"corporate-domains", "onepassword", "lark", "spotify", "spotify-ip"})
+        self.assertEqual(inline, {"corporate-domains", "onepassword", "lark"})
         for name, provider in PROVIDERS.items():
             if name == "awavenue":
                 self.assertEqual(provider["url"], "https://raw.githubusercontent.com/TG-Twilight/"
@@ -143,15 +140,13 @@ class ConfigTests(unittest.TestCase):
         self.assertEqual(groups["GitLab"]["proxies"][0], "日本")
         self.assertEqual(set(groups["Lark"]["proxies"]), regions)
         self.assertEqual(groups["Lark"]["proxies"][0], "日本")
-        self.assertEqual(groups["Spotify"]["proxies"][0], "默认代理")
-        self.assertEqual(set(groups["Spotify"]["proxies"]), regions | {"默认代理"})
         for name in ["Apple", "Microsoft", "测速"]:
             self.assertEqual(groups[name]["proxies"][0], "DIRECT")
             self.assertEqual(set(groups[name]["proxies"]), regions | {"DIRECT"})
-        self.assertFalse({"Telegram", "流媒体"} & set(groups))
-        for name, default in STREAM_POLICIES.values():
-            self.assertEqual(set(groups[name]["proxies"]), regions)
-            self.assertEqual(groups[name]["proxies"][0], default)
+        self.assertNotIn("Telegram", groups)
+        self.assertNotIn("Spotify", groups)
+        self.assertFalse(any("流媒体" in name or "Bilibili" in name for name in groups))
+        self.assertTrue(set(STREAM_POLICIES.values()) <= regions)
         other = groups["其他地区"]
         self.assertEqual(other["type"], "select")
         self.assertTrue(other["include-all"])
@@ -242,7 +237,7 @@ class ConfigTests(unittest.TestCase):
         self.assertLess(RULES.index(AD_RULE_FIELDS), RULES.index(["RULE-SET", "onepassword", "DIRECT"]))
         for name in ["stream", "telegram"]:
             self.assertIn(["RULE-SET", name, "默认代理"], RULES)
-        for name, target in [("lark", "Lark"), ("spotify", "Spotify"),
+        for name, target in [("lark", "Lark"),
                              ("apple-services", "Apple"), ("apple-cn", "DIRECT")]:
             self.assertLess(RULES.index(["RULE-SET", name, target]),
                             RULES.index(["RULE-SET", "stream", "默认代理"]))
@@ -255,16 +250,16 @@ class ConfigTests(unittest.TestCase):
 
     def test_regional_streaming_precedence(self):
         general = RULES.index(["RULE-SET", "stream", "默认代理"])
-        for provider, (policy, _) in STREAM_POLICIES.items():
+        for provider, policy in STREAM_POLICIES.items():
             position = RULES.index(["RULE-SET", provider, policy])
             self.assertLess(position, general)
-            for service, target in [("spotify", "Spotify"), ("apple-services", "Apple"),
+            for service, target in [("apple-services", "Apple"),
                                     ("apple-cn", "DIRECT"), ("microsoft", "Microsoft")]:
                 self.assertLess(RULES.index(["RULE-SET", service, target]), position)
-        self.assertLess(RULES.index(["RULE-SET", "stream-jp", "日本流媒体"]),
-                        RULES.index(["RULE-SET", "stream-us", "美国流媒体"]))
-        self.assertLess(RULES.index(["RULE-SET", "stream-biliintl", "东南亚流媒体"]),
-                        RULES.index(["RULE-SET", "stream-hk", "香港流媒体"]))
+        self.assertLess(RULES.index(["RULE-SET", "stream-jp", "日本"]),
+                        RULES.index(["RULE-SET", "stream-us", "美国"]))
+        self.assertLess(RULES.index(["RULE-SET", "stream-biliintl", "台湾"]),
+                        RULES.index(["RULE-SET", "stream-hk", "香港"]))
         self.assertLess(RULES.index(["RULE-SET", "speedtest", "测速"]),
                         RULES.index(["RULE-SET", "apple-services", "Apple"]))
         for provider in ["download-domain", "download"]:

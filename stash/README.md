@@ -15,7 +15,7 @@ https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/stash.yaml
 https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/airport.stoverride
 ```
 
-AI 初始选择美国，GitLab 和 Lark 初始选择日本。AI 与 GitLab 的选项排除香港。Spotify 初始选择“默认代理”，也可以独立选择地区。Apple、Microsoft 和测速初始选择 `DIRECT`。下载初始选择香港，可手动选择 `DIRECT`。
+AI 初始选择美国，GitLab 和 Lark 初始选择日本。AI 与 GitLab 的选项排除香港。Apple、Microsoft 和测速初始选择 `DIRECT`。下载初始选择香港，可手动选择 `DIRECT`。
 
 香港、日本、美国、新加坡、台湾、韩国和欧洲根据测速结果自动选择节点。欧洲包含英国、德国、荷兰等节点。“其他地区”使用 `select`，由你手动指定节点，通过 `interval: -1` 关闭该组的定时测速。它收纳上述地区以外的节点，过滤流量余额、套餐到期和重置时间等订阅提示项。
 
@@ -53,7 +53,7 @@ DNS、策略组、规则集合、分流规则和图标由主配置管理。每�
 
 ## 图标集
 
-全部 24 个策略组使用仓库内的圆角方形 PNG。图标为 256 × 256 像素，统一白色底板、透明外边缘和标志区域，保留应用标志原色。地区与对应流媒体组共用旗帜或地图图片。配置通过 `icon` 字段引用图片，符合 [Stash 策略组图标文档](https://stash.wiki/configuration/proxy-group-icon)。
+全部 16 个策略组使用仓库内的圆角方形 PNG。图标为 256 × 256 像素，统一白色底板、透明外边缘和标志区域，保留应用标志原色。配置通过 `icon` 字段引用图片，符合 [Stash 策略组图标文档](https://stash.wiki/configuration/proxy-group-icon)。
 
 [一键导入 Stash 图标集](https://link.stash.ws/install-icon-set/raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/stash.json)。也可以在图标集导入页面填写此地址：
 
@@ -61,11 +61,11 @@ DNS、策略组、规则集合、分流规则和图标由主配置管理。每�
 https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/stash.json
 ```
 
-[stash.json](icons/stash.json) 包含全部 24 个策略组的图标名称和 HTTPS 地址，共用 18 张图片，保存在 [icons/rounded](icons/rounded)。`stash.yaml` 已引用这些图片；更新主配置即可使用，导入图标集后也可以在其他配置中手动选择。导入链接依据 [Stash URL Schema 文档](https://stash.wiki/faq/url-schema)。
+[stash.json](icons/stash.json) 包含全部 16 个策略组的图标名称和 HTTPS 地址，图片保存在 [icons/rounded](icons/rounded)。`stash.yaml` 已引用这些图片；更新主配置即可使用，导入图标集后也可以在其他配置中手动选择。导入链接依据 [Stash URL Schema 文档](https://stash.wiki/faq/url-schema)。
 
-AI 使用 Apple 开发者网站的 Apple Intelligence 图标，Lark 使用官方 App Store 图标。Spotify 使用[官方品牌资源](https://developer.spotify.com/documentation/design)中的标志，Apple 和 Microsoft 使用官方 GitHub 组织标志。默认代理、下载和地区旗帜来自 [Koolson/Qure](https://github.com/Koolson/Qure)，遵循来源署名与个人非商业使用要求。各品牌图标的权利归原权利人所有，完整下载地址见 [sources.json](icons/sources.json)。
+AI 使用 Apple 开发者网站的 Apple Intelligence 图标，Lark 使用官方 App Store 图标。Apple 和 Microsoft 使用官方 GitHub 组织标志。默认代理、下载和地区旗帜来自 [Koolson/Qure](https://github.com/Koolson/Qure)，遵循来源署名与个人非商业使用要求。各品牌图标的权利归原权利人所有，完整下载地址见 [sources.json](icons/sources.json)。
 
-GitLab 使用[官方品牌资源](https://about.gitlab.com/press/press-kit/)中的彩色标志。测速、欧洲、东南亚和“其他地区”图标来自 Qure 彩色图标集。`sources.json` 的 `groups` 字段记录多个策略组共用同一张图片的关系。
+GitLab 使用[官方品牌资源](https://about.gitlab.com/press/press-kit/)中的彩色标志。测速、韩国、欧洲和“其他地区”图标来自 Qure 彩色图标集。
 
 使用 ImageMagick 7 重新生成图标：
 
@@ -73,7 +73,7 @@ GitLab 使用[官方品牌资源](https://about.gitlab.com/press/press-kit/)中�
 pwsh -File stash/icons/build.ps1 -Magick magick
 ```
 
-脚本使用 PowerShell 7 下载来源图片，等比例缩放到 176 × 176 像素区域，在 sRGB 色彩空间中合成到 232 × 232 像素的白色圆角底板上。全部图片共用 52 像素圆角和 12 像素透明外边距。Spotify 取自官方资源中完整的圆形标志区域，裁剪位置记录在 `sources.json`。源文件缓存在 `.work/icon-sources/`，生成结果保存在 `icons/rounded/`。图片地址的 `v` 参数用于更新客户端缓存。
+脚本使用 PowerShell 7 下载来源图片，等比例缩放到 176 × 176 像素区域，在 sRGB 色彩空间中合成到 232 × 232 像素的白色圆角底板上。全部图片共用 52 像素圆角和 12 像素透明外边距。源文件缓存在 `.work/icon-sources/`，生成结果保存在 `icons/rounded/`。图片地址的 `v` 参数用于更新客户端缓存。
 
 在 PowerShell 中调用脚本时，可通过 `-Id gitlab,europe` 指定需要生成的图片；添加 `-UseCachedSources` 后只读取已有来源缓存，缓存缺失时立即报告错误。
 
@@ -89,8 +89,8 @@ pwsh -File stash/icons/build.ps1 -Magick magick
 | 1Password 专用服务、更新与附件 | DIRECT |
 | AI 与 Apple Intelligence | AI，初始选择美国 |
 | Lark 专用服务域名 | Lark，初始选择日本 |
-| Spotify | Spotify，初始使用默认代理 |
-| 美国、欧洲、日本、韩国、香港、台湾流媒体及 Bilibili 国际版 | 各自的策略组，初始出口见下表 |
+| Spotify | 通用流媒体规则，使用默认代理 |
+| 美国、欧洲、日本、韩国、香港、台湾流媒体及 Bilibili 国际版 | 直接使用对应节点组，见下表 |
 | 其他流媒体 | 默认代理 |
 | Telegram | 默认代理 |
 | Apple 中国服务与 Apple CDN | DIRECT |
@@ -117,7 +117,7 @@ pwsh -File stash/icons/build.ps1 -Magick magick
 
 Lark 集合使用[官方防火墙域名清单](https://www.larksuite.com/hc/en-US/articles/360044784554-configure-organization-firewall-domain-and-ip-allowlist)中的 6 个专用域名，覆盖 `larksuite.com`、`larksuite-us.com`、`larksuitecdn.com`、`larksuitepkg.com`、`larkenterprise.com` 和 `baseopendevx.com` 及其子域名。集合优先于通用服务规则，随本配置维护。其他共享服务域名和直接访问 IP 的连接继续按通用规则处理。
 
-Spotify 的 17 个域名、1 个关键词和 1 个 IP 条目来自 [Sukka 的 Spotify 定义](https://github.com/SukkaW/Surge/blob/master/Source/stream.ts#L630)。域名和 IP 使用 Stash inline 集合，关键词使用单独规则，均优先于通用流媒体集合。内嵌条目随本配置维护。Apple 和 Microsoft 规则优先于通用流媒体集合，Apple Intelligence 使用 AI 分组。
+Spotify 的域名、关键词和 IP 由 Sukka 的通用 `stream` 与 `stream-ip` 集合覆盖，使用默认代理并随远程集合更新。Apple 和 Microsoft 规则优先于通用流媒体集合，Apple Intelligence 使用 AI 分组。
 
 Apple 的 `icloud.com`、`icloud-content.com` 和推送服务使用 Apple 分组，初始选择 `DIRECT`。更新配置后，需要在策略页面确认 Apple 的当前选择；已保存的选择可能继续生效。
 
@@ -125,9 +125,9 @@ Sukka 的 `direct` 集合包含 macOS 下载工具等程序的 `PROCESS-NAME` �
 
 ### 地区流媒体
 
-地区流媒体组均为手动选择，选项为地区分类。规则优先于通用流媒体集合，Apple、Microsoft 和 Spotify 的专用策略继续优先生效。
+地区流媒体规则直接引用对应地区的节点组，通用流媒体规则引用“默认代理”。这些规则不单独创建策略组，策略页面展示已有地区分类。地区规则优先于通用流媒体集合，Apple 和 Microsoft 的专用策略继续优先生效。
 
-| 策略组 | Sukka 集合 | 初始出口 | 上游收录示例 |
+| 流量分类 | Sukka 集合 | 节点组 | 上游收录示例 |
 | --- | --- | --- | --- |
 | 美国流媒体 | `stream_us` | 美国 | Hulu、Paramount+、Peacock、Tubi |
 | 欧洲流媒体 | `stream_eu` | 欧洲 | BBC、ITV |
@@ -135,13 +135,13 @@ Sukka 的 `direct` 集合包含 macOS 下载工具等程序的 `PROCESS-NAME` �
 | 韩国流媒体 | `stream_kr` | 韩国 | Naver TV |
 | 香港流媒体 | `stream_hk` | 香港 | myTV SUPER、ViuTV、Now E |
 | 台湾流媒体 | `stream_tw` | 台湾 | 巴哈姆特、KKTV、LiTV |
-| 东南亚流媒体 | `stream_biliintl` | 新加坡 | Bilibili 国际版 |
+| Bilibili 国际版 | `stream_biliintl` | 台湾 | Bilibili 国际版 |
 
-欧洲流媒体默认使用欧洲节点分类，韩国流媒体默认使用韩国节点分类。欧洲组按延迟自动选择英国、德国、荷兰等国家的节点。BBC、ITV 等服务可能要求英国出口，欧洲组选择其他国家时不保证播放权限。
+欧洲和韩国的流媒体直接使用各自地区的节点组。欧洲组按延迟自动选择英国、德国、荷兰等国家的节点。BBC、ITV 等服务可能要求英国出口，欧洲组选择其他国家时不保证播放权限。
 
 “其他地区”的节点选择由所有引用它的策略组共用。修改该组的节点，会影响当前选择“其他地区”的全部策略组。节点名称决定归类；没有地区标记的节点也会进入该组，需要核实其真实出口。
 
-Hulu Japan 同时出现在日本与美国集合，日本集合优先。Bilibili 国际版的专用集合优先于香港集合。香港与台湾集合共同收录的 HBO Asia 域名使用香港流媒体策略，可在该策略中手动选择台湾出口。
+Hulu Japan 同时出现在日本与美国集合，日本集合优先。Bilibili 国际版的专用集合优先于香港集合。香港与台湾集合共同收录的 HBO Asia 域名使用香港节点组。
 
 Netflix、Disney+、YouTube 等通用服务继续使用默认代理。测速集合优先于 Apple 服务集合，以便指定 `networkQuality` 的测速出口；它不包含与 Netflix 共用基础设施的 `fast.com`。地区分流只指定出口，播放权限仍由账号、内容地区和节点的解锁能力决定。
 
@@ -223,7 +223,7 @@ DNS 出口检测网站展示的是递归 DNS 访问权威 DNS 时的出口。出
 
 ## 省电设置
 
-“默认代理”、服务分组、地区流媒体和“其他地区”使用手动选择，通过 `interval: -1` 关闭这些分组的定时测速。香港、日本、美国、新加坡、台湾、韩国和欧洲使用 `url-test`，每 600 秒测速，并设置 `lazy: true`，一段时间未使用的地区跳过自动测速。
+“默认代理”、服务分组和“其他地区”使用手动选择，通过 `interval: -1` 关闭这些分组的定时测速。香港、日本、美国、新加坡、台湾、韩国和欧洲使用 `url-test`，每 600 秒测速，并设置 `lazy: true`，一段时间未使用的地区跳过自动测速。
 
 地区分组自动选择可用的低延迟节点。`tolerance: 50` 表示新节点比当前节点快超过 50 ms 才会切换；当前节点测速失败时立即切换。机场远程代理集使用 `https://www.gstatic.com/generate_204`，超时为 5 秒。测速结果表示连通性和延迟，不能表示下载带宽或服务解锁能力。具体语义见 [策略组文档](https://stash.wiki/proxy-protocols/proxy-groups)、[延迟测试文档](https://stash.wiki/proxy-protocols/proxy-benchmark)和 [远程代理集文档](https://stash.wiki/proxy-protocols/proxy-providers)。
 
@@ -250,11 +250,11 @@ python stash/check_config.py --online --proxy http://127.0.0.1:7890
 - 12 项本地检查通过，涵盖主配置与机场模板的 YAML 解析、重复键、分组引用、地区过滤表达式、内置 DNS 加密、Fake-IP 例外、域名与 IP 规则顺序、流媒体优先级、机场覆写范围和图标集。
 - 8 个节点分类通过 `include-all: true` 汇集节点，7 个地区自动测速，“其他地区”手动选择。主配置的 `proxy-providers` 为空字典。机场模板只定义一个代理集及展示字段，名称通过 YAML 锚点复用，订阅地址为占位值。
 - 公共 DNS 上游均为 HTTPS DNS，只有公司域名 policy 使用 `system`。`follow-rule` 关闭，两个 IPv6 解析开关关闭，53 端口提前拦截位于全部分流规则之前。
-- 配置包含 40 个远程集合与 5 个 inline 集合，引用检查通过。远程集合已通过规则类型和 CIDR 格式检查；Sukka `non_ip` 集合中附带的 IP 条目均包含 `no-resolve`，不会自行触发域名解析。
-- Windows 已加载 24 个策略组与全部 45 个规则集合。22 个目标的核心规则诊断通过，覆盖地区流媒体、CDN、GitLab、测速、下载 IP、网易云 IP、Telegram 和原有国内服务。检查验证了规则与出口选择，未执行流媒体账号登录或视频播放。
-- “其他地区”的实际节点与各自动地区组互不重复，订阅提示项未进入节点分类。韩国和欧洲流媒体分别选择对应地区组，英国、德国、荷兰等节点统一归入欧洲。
+- 配置包含 40 个远程集合与 3 个 inline 集合，引用检查通过。远程集合已通过规则类型和 CIDR 格式检查；Sukka `non_ip` 集合中附带的 IP 条目均包含 `no-resolve`，不会自行触发域名解析。
+- 地区流媒体直接引用相应节点组，通用流媒体引用默认代理；主配置与图标集包含 16 个展示组，引用检查确认全部目标有效。
+- “其他地区”的节点过滤与各自动地区组互不重复，订阅提示项从该分类排除。韩国和欧洲流媒体分别引用对应地区组，英国、德国、荷兰等节点统一归入欧洲。
 - 秋风完整规则下载与 YAML 解析通过，Windows 已加载全部 976 条，包含 960 条精确域名、12 条域名后缀和 4 条关键词规则。`ad-api.4pyun.com` 与 `unityads.unity3d.com` 在规则诊断中命中提前拒绝，广告条件明确排除公司域名集合。
-- Windows 0.1.47 已加载主配置。公司域名命中 `corporate-domains`，Stash DNS API 确认解析来源为 `system`。本机使用系统代理绕过和 5 条隧道网段排除，内网 HTTP 请求返回 `200`。
+- 公司 VPN 设置已在 Windows 0.1.47 验证。公司域名命中 `corporate-domains`，Stash DNS API 确认解析来源为 `system`。本机使用系统代理绕过和 5 条隧道网段排除，内网 HTTP 请求返回 `200`。
 - 1Password 的 11 个域名条目使用 `domain` 集合，直连规则优先于下载和通用境外服务规则。
 - 山姆的 `api-sams.walmartmobile.cn`、`decoration-sams.walmartmobile.cn` 通过国内 DoH 返回 `157.148.16.212`，属于 Sukka 中国 IP 集合。
 - 万达的 `cinema-api-prd-mx.wandafilm.com`、`misc-api-prd-mx.wandafilm.com` 通过国内 DoH 返回 `120.53.82.119`，属于 Sukka 中国 IP 集合。
@@ -262,7 +262,7 @@ python stash/check_config.py --online --proxy http://127.0.0.1:7890
 
 上游联网检查验证了规则服务与 DoH 的可用性；公司内网检查还验证了 Stash 的实际 DNS policy、Windows 系统代理绕过和 aTrust 路由。HTTP 检查未执行公司系统的账号登录或业务操作。
 
-当前工作区位于 Windows，没有 Apple 平台的 Stash 运行环境。Windows 的验证范围见上文；iOS、macOS 的 VPN 共存和设备耗电尚未实测。
+检查脚本只读取仓库文件和公开规则、查询 DoH，不修改已安装 Stash 的配置、订阅或策略选择。更新主配置由使用者在应用中操作。流媒体的实际播放权限与 iOS、macOS 的设备耗电尚未实测。
 
 iMessage 图片上传速度需要结合发送时的连接记录判断，记录应包含上传域名、命中规则和实际出口。当前没有 iMessage 的连接记录，无法确认其速度问题的原因。
 

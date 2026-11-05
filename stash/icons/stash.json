@@ -1,6 +1,6 @@
 {
   "name": "Sivon Stash 圆角图标",
-  "description": "24 个策略组图标，统一彩色圆角方形，包含地区流媒体与手动选择的其他地区。",
+  "description": "16 个策略组图标，统一彩色圆角方形，包含韩国、欧洲与手动选择的其他地区。",
   "icons": [
     {
       "name": "默认代理",
@@ -13,10 +13,6 @@
     {
       "name": "Lark",
       "url": "https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/lark.png?v=2"
-    },
-    {
-      "name": "Spotify",
-      "url": "https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/spotify.png?v=2"
     },
     {
       "name": "Apple",
@@ -37,34 +33,6 @@
     {
       "name": "测速",
       "url": "https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/speedtest.png?v=2"
-    },
-    {
-      "name": "美国流媒体",
-      "url": "https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/united-states.png?v=2"
-    },
-    {
-      "name": "欧洲流媒体",
-      "url": "https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/europe.png?v=2"
-    },
-    {
-      "name": "日本流媒体",
-      "url": "https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/japan.png?v=2"
-    },
-    {
-      "name": "韩国流媒体",
-      "url": "https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/korea.png?v=2"
-    },
-    {
-      "name": "香港流媒体",
-      "url": "https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/hong-kong.png?v=2"
-    },
-    {
-      "name": "台湾流媒体",
-      "url": "https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/taiwan.png?v=2"
-    },
-    {
-      "name": "东南亚流媒体",
-      "url": "https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/southeast-asia.png?v=2"
     },
     {
       "name": "香港",

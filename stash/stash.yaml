@@ -47,12 +47,6 @@ proxy-groups:
     proxies: [日本, 香港, 美国, 新加坡, 台湾, 韩国, 欧洲, 其他地区]
     interval: -1
     lazy: true
-  - name: Spotify
-    type: select
-    icon: https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/spotify.png?v=2
-    proxies: [默认代理, 香港, 日本, 美国, 新加坡, 台湾, 韩国, 欧洲, 其他地区]
-    interval: -1
-    lazy: true
   - name: Apple
     type: select
     icon: https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/apple.png?v=2
@@ -81,48 +75,6 @@ proxy-groups:
     type: select
     icon: https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/speedtest.png?v=2
     proxies: [DIRECT, 香港, 日本, 美国, 新加坡, 台湾, 韩国, 欧洲, 其他地区]
-    interval: -1
-    lazy: true
-  - name: 美国流媒体
-    type: select
-    icon: https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/united-states.png?v=2
-    proxies: [美国, 日本, 香港, 新加坡, 台湾, 韩国, 欧洲, 其他地区]
-    interval: -1
-    lazy: true
-  - name: 欧洲流媒体
-    type: select
-    icon: https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/europe.png?v=2
-    proxies: [欧洲, 美国, 日本, 韩国, 香港, 新加坡, 台湾, 其他地区]
-    interval: -1
-    lazy: true
-  - name: 日本流媒体
-    type: select
-    icon: https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/japan.png?v=2
-    proxies: [日本, 香港, 美国, 新加坡, 台湾, 韩国, 欧洲, 其他地区]
-    interval: -1
-    lazy: true
-  - name: 韩国流媒体
-    type: select
-    icon: https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/korea.png?v=2
-    proxies: [韩国, 日本, 香港, 美国, 新加坡, 台湾, 欧洲, 其他地区]
-    interval: -1
-    lazy: true
-  - name: 香港流媒体
-    type: select
-    icon: https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/hong-kong.png?v=2
-    proxies: [香港, 日本, 美国, 新加坡, 台湾, 韩国, 欧洲, 其他地区]
-    interval: -1
-    lazy: true
-  - name: 台湾流媒体
-    type: select
-    icon: https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/taiwan.png?v=2
-    proxies: [台湾, 香港, 日本, 美国, 新加坡, 韩国, 欧洲, 其他地区]
-    interval: -1
-    lazy: true
-  - name: 东南亚流媒体
-    type: select
-    icon: https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/southeast-asia.png?v=2
-    proxies: [新加坡, 香港, 日本, 美国, 台湾, 韩国, 欧洲, 其他地区]
     interval: -1
     lazy: true
   - name: 香港
@@ -231,33 +183,6 @@ rule-providers:
       - '+.larksuitepkg.com'
       - '+.larkenterprise.com'
       - '+.baseopendevx.com'
-  # Spotify 条目来自 SukkaW/Surge 的 Source/stream.ts。
-  spotify:
-    type: inline
-    behavior: domain
-    payload:
-      - '+.pscdn.co'
-      - '+.scdn.co'
-      - '+.spoti.fi'
-      - '+.spotify.com'
-      - '+.byspotify.com'
-      - '+.spotify-everywhere.com'
-      - '+.spotify.design'
-      - '+.spotifycdn.com'
-      - '+.spotifycdn.net'
-      - '+.spotifycharts.com'
-      - '+.spotifycodes.com'
-      - '+.spotifyforbrands.com'
-      - '+.spotifyjobs.com'
-      - '+.spotify-com.akamaized.net'
-      - '+.spotifynewsroom.jp'
-      - '+.spotilocal.com'
-      - '+.tospotify.com'
-  spotify-ip:
-    type: inline
-    behavior: ipcidr
-    payload:
-      - 35.186.224.47/32
   lan:
     behavior: classical
     format: text
@@ -505,8 +430,6 @@ rules:
   - RULE-SET,lark,Lark
   - RULE-SET,ai,AI
   - RULE-SET,apple-intelligence,AI
-  - RULE-SET,spotify,Spotify
-  - DOMAIN-KEYWORD,-spotify-com,Spotify
   - RULE-SET,speedtest,测速
   - RULE-SET,apple-cdn,DIRECT
   - RULE-SET,apple-cn,DIRECT
@@ -515,14 +438,14 @@ rules:
   - RULE-SET,microsoft,Microsoft
   - RULE-SET,gitlab,GitLab
   # 日本集合先于美国集合，两者均包含 Hulu Japan。
-  - RULE-SET,stream-jp,日本流媒体
-  - RULE-SET,stream-us,美国流媒体
-  - RULE-SET,stream-eu,欧洲流媒体
-  - RULE-SET,stream-kr,韩国流媒体
+  - RULE-SET,stream-jp,日本
+  - RULE-SET,stream-us,美国
+  - RULE-SET,stream-eu,欧洲
+  - RULE-SET,stream-kr,韩国
   # Bilibili 国际版也被香港集合收录，专用策略优先。
-  - RULE-SET,stream-biliintl,东南亚流媒体
-  - RULE-SET,stream-hk,香港流媒体
-  - RULE-SET,stream-tw,台湾流媒体
+  - RULE-SET,stream-biliintl,台湾
+  - RULE-SET,stream-hk,香港
+  - RULE-SET,stream-tw,台湾
   - RULE-SET,stream,默认代理
   - RULE-SET,telegram,默认代理
   - RULE-SET,download-domain,下载
@@ -536,7 +459,6 @@ rules:
   # 未命中域名规则时，通过国内 DoH 查询真实地址，供后续 IP 规则判断。
   - RULE-SET,lan-ip,DIRECT
   - RULE-SET,ai-ip,AI,no-resolve
-  - RULE-SET,spotify-ip,Spotify,no-resolve
   - RULE-SET,apple-services-ip,Apple,no-resolve
   - RULE-SET,stream-ip,默认代理,no-resolve
   - RULE-SET,telegram-ip,默认代理,no-resolve
