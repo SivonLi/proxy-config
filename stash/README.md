@@ -15,9 +15,9 @@ https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/stash.yaml
 https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/airport.stoverride
 ```
 
-AI 初始选择新加坡，选项排除香港。Lark 仅提供日本和“默认代理”，初始选择日本。Apple 和 Microsoft 仅提供 `DIRECT` 与“默认代理”，初始选择 `DIRECT`。下载仅提供“默认代理”与 `DIRECT`，初始选择“默认代理”。测速初始选择 `DIRECT`，可以手动选择地区。
+AI 初始选择新加坡，选项排除香港。Lark 仅提供日本和“默认代理”，初始选择日本。Apple 提供 `DIRECT`、“默认代理”和美国，初始选择 `DIRECT`。Microsoft 仅提供 `DIRECT` 与“默认代理”，初始选择 `DIRECT`。下载仅提供“默认代理”与 `DIRECT`，初始选择“默认代理”。测速初始选择 `DIRECT`，可以手动选择地区。
 
-香港、日本、美国、新加坡、台湾、韩国和欧洲根据测速结果自动选择节点。欧洲包含英国、德国、荷兰等节点。“其他地区”使用 `select`，由你手动指定节点，通过 `interval: -1` 关闭该组的定时测速。它收纳上述地区以外的节点，过滤流量余额、套餐到期和重置时间等订阅提示项。
+香港、日本、美国、新加坡、台湾、韩国和欧洲根据测速结果自动选择节点。欧洲包含英国、德国、荷兰等节点。“其他地区”使用 `select`，由你手动指定节点，通过 `interval: -1` 关闭该组自身的定时测速。它收纳上述地区以外的节点，过滤流量余额、套餐到期和重置时间等订阅提示项。首次使用“其他地区”时，需要手动选择机场节点；初始的 `REJECT` 用于空组保护。
 
 各机场的远程代理集从 Clash 订阅中读取 `proxies` 节点列表。8 个节点分类通过 `include-all: true` 汇集节点，再按名称过滤。增加机场或修改机场名称时，只需编辑对应的机场覆写。字段用法见 [Stash 远程代理集文档](https://stash.wiki/proxy-protocols/proxy-providers)和 [策略组文档](https://stash.wiki/proxy-protocols/proxy-groups)。
 
@@ -37,11 +37,11 @@ DNS、策略组、规则集合、分流规则和图标由主配置管理。每�
 
 在覆写页面启用机场后，它的节点参与各地区组的筛选。7 个自动地区组按需测速，“其他地区”保留手动选择。关闭该机场的覆写并应用配置后，它的代理集从当前配置中移除。开关控制整份机场订阅，可以同时启用多个机场。
 
-**全部机场关闭，或所选地区没有节点时，Stash 会将空组视为 `DIRECT`。** 使用代理前需要保持相应地区至少有一个可用节点。每份模板均未指定固定缓存路径，复制模板时无需另行维护缓存文件名。
+8 个节点分类均显式包含 `REJECT`，地区过滤保留 `REJECT` 并排除 `DIRECT`。全部机场关闭或某个地区没有匹配节点时，该地区仍有拒绝出口，无法通过空组转换为直连。地区流媒体使用隐藏的 `fallback`，在优先地区不可用时尝试“默认代理”。其他直接引用地区的服务需要保持所选地区有可用节点。每份模板均未指定固定缓存路径，复制模板时无需另行维护缓存文件名。
 
 机场节点协议必须得到 Stash 支持。机场需要专用 DNS 时，该服务器必须支持加密 DNS；必要的 DNS 和 `hosts` 设置可以填写在自己的本地配置中。
 
-地区分组通过节点名称识别中文地区名、英文名称、常见代码和旗帜。请在地区分组中确认机场节点已正确归类。Stash 会将没有匹配节点的空组视为 `DIRECT`，使用前需要确认所选地区包含机场节点；节点命名不符合规则时，需要调整相应 `filter`。
+地区分组通过节点名称识别中文地区名、英文名称、常见代码和旗帜。请在地区分组中确认机场节点已正确归类。节点命名不符合规则时，需要调整相应 `filter`，同时保留 `REJECT` 并排除 `DIRECT`。
 
 ### 首页订阅信息
 
@@ -53,7 +53,7 @@ DNS、策略组、规则集合、分流规则和图标由主配置管理。每�
 
 ## 图标集
 
-全部 15 个策略组使用仓库内的圆角方形 PNG。图标为 256 × 256 像素，统一白色底板、透明外边缘和标志区域，保留应用标志原色。配置通过 `icon` 字段引用图片，符合 [Stash 策略组图标文档](https://stash.wiki/configuration/proxy-group-icon)。
+全部 15 个展示组使用仓库内的圆角方形 PNG，6 个隐藏的流媒体辅助组不设置图标。图标为 256 × 256 像素，统一白色底板、透明外边缘和标志区域，保留应用标志原色。配置通过 `icon` 字段引用图片，符合 [Stash 策略组图标文档](https://stash.wiki/configuration/proxy-group-icon)。
 
 [一键导入 Stash 图标集](https://link.stash.ws/install-icon-set/raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/stash.json)。也可以在图标集导入页面填写此地址：
 
@@ -61,7 +61,7 @@ DNS、策略组、规则集合、分流规则和图标由主配置管理。每�
 https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/stash.json
 ```
 
-[stash.json](icons/stash.json) 包含全部 15 个策略组的图标名称和 HTTPS 地址，图片保存在 [icons/rounded](icons/rounded)。`stash.yaml` 已引用这些图片；更新主配置即可使用，导入图标集后也可以在其他配置中手动选择。导入链接依据 [Stash URL Schema 文档](https://stash.wiki/faq/url-schema)。
+[stash.json](icons/stash.json) 包含全部 15 个展示组的图标名称和 HTTPS 地址，图片保存在 [icons/rounded](icons/rounded)。`stash.yaml` 已引用这些图片；更新主配置即可使用，导入图标集后也可以在其他配置中手动选择。导入链接依据 [Stash URL Schema 文档](https://stash.wiki/faq/url-schema)。
 
 AI 使用 Apple 开发者网站的 Apple Intelligence 图标，Lark 使用官方 App Store 图标。Apple 和 Microsoft 使用官方 GitHub 组织标志。默认代理、下载和地区旗帜来自 [Koolson/Qure](https://github.com/Koolson/Qure)，遵循来源署名与个人非商业使用要求。各品牌图标的权利归原权利人所有，完整下载地址见 [sources.json](icons/sources.json)。
 
@@ -92,7 +92,7 @@ pwsh -File stash/icons/build.ps1 -Magick magick
 | AI 与 Apple Intelligence | AI，初始选择新加坡 |
 | Lark 专用服务域名 | Lark，初始选择日本 |
 | Spotify | 通用流媒体规则，使用默认代理 |
-| 美国、欧洲、日本、韩国、香港、台湾流媒体及 Bilibili 国际版 | 直接使用对应节点组，见下表 |
+| 美国、欧洲、日本、韩国、香港、台湾流媒体及 Bilibili 国际版 | 优先对应地区，不可用时使用默认代理，见下表 |
 | 其他流媒体 | 默认代理 |
 | Telegram | 默认代理 |
 | Apple 中国服务与 Apple CDN | DIRECT |
@@ -126,9 +126,9 @@ Sukka 的 `direct` 集合包含 macOS 下载工具等程序的 `PROCESS-NAME` �
 
 ### 地区流媒体
 
-地区流媒体规则直接引用对应地区的节点组，通用流媒体规则引用“默认代理”。这些规则不单独创建策略组，策略页面展示已有地区分类。地区规则优先于通用流媒体集合，Apple 和 Microsoft 的专用策略继续优先生效。
+地区流媒体通过 6 个隐藏的 `fallback` 组选择出口，每组按 `[对应地区, 默认代理]` 的顺序选择可用成员。台湾流媒体和 Bilibili 国际版共用台湾的故障切换组。通用流媒体规则引用“默认代理”，策略页面仍展示 15 个组。地区规则优先于通用流媒体集合，Apple 和 Microsoft 的专用策略继续优先生效。
 
-| 流量分类 | Sukka 集合 | 节点组 | 上游收录示例 |
+| 流量分类 | Sukka 集合 | 优先地区 | 上游收录示例 |
 | --- | --- | --- | --- |
 | 美国流媒体 | `stream_us` | 美国 | Hulu、Paramount+、Peacock、Tubi |
 | 欧洲流媒体 | `stream_eu` | 欧洲 | BBC、ITV |
@@ -138,11 +138,15 @@ Sukka 的 `direct` 集合包含 macOS 下载工具等程序的 `PROCESS-NAME` �
 | 台湾流媒体 | `stream_tw` | 台湾 | 巴哈姆特、KKTV、LiTV |
 | Bilibili 国际版 | `stream_biliintl` | 台湾 | Bilibili 国际版 |
 
-欧洲和韩国的流媒体直接使用各自地区的节点组。欧洲组按延迟自动选择英国、德国、荷兰等国家的节点。BBC、ITV 等服务可能要求英国出口，欧洲组选择其他国家时不保证播放权限。
+各地区组包含不可用的 `REJECT` 出口；没有机场节点时，组内仍有成员，流量不会通过空组转换为直连。有可用节点时，地区的 `url-test` 选择低延迟节点；所有节点被判定不可用后，外层 `fallback` 尝试“默认代理”。`fallback` 每 600 秒检查一次，并启用 `lazy: true`；检测到优先地区恢复后，新连接重新优先使用该地区。断线检测与切换存在等待时间，已有连接仍可能需要应用重新建立。
+
+“默认代理”需要选择包含可用节点的地区。如果它也选择当前故障地区，或者全部机场均不可用，故障切换无法恢复访问；这些代理路径会连接失败或拒绝连接，不会增加直连出口。`REJECT` 用于地区组的非空保护，服务分组仍使用各自配置的选项。分组嵌套、故障切换与定时检查依据 [Stash 策略组文档](https://stash.wiki/proxy-protocols/proxy-groups)。
+
+欧洲组按延迟自动选择英国、德国、荷兰等国家的节点。BBC、ITV 等服务可能要求英国出口，欧洲组选择其他国家时不保证播放权限。故障切换只依据节点连通性；切换至默认代理后，出口地区可能变化，播放权限仍取决于账号和节点的解锁能力。
 
 “其他地区”的节点选择由所有引用它的策略组共用。修改该组的节点，会影响当前选择“其他地区”的全部策略组。节点名称决定归类；没有地区标记的节点也会进入该组，需要核实其真实出口。
 
-Hulu Japan 同时出现在日本与美国集合，日本集合优先。Bilibili 国际版的专用集合优先于香港集合。香港与台湾集合共同收录的 HBO Asia 域名使用香港节点组。
+Hulu Japan 同时出现在日本与美国集合，日本集合优先。Bilibili 国际版的专用集合优先于香港集合。香港与台湾集合共同收录的 HBO Asia 域名优先使用香港节点组，不可用时使用默认代理。
 
 Netflix、Disney+、YouTube 等通用服务继续使用默认代理。测速集合优先于 Apple 服务集合，以便指定 `networkQuality` 的测速出口；它不包含与 Netflix 共用基础设施的 `fast.com`。地区分流只指定出口，播放权限仍由账号、内容地区和节点的解锁能力决定。
 
@@ -236,11 +240,13 @@ DNS 出口检测网站展示的是递归 DNS 访问权威 DNS 时的出口。出
 - 在按需连接中开启“保持 Stash 开启”，保持各个网络下的接管。规则中保留局域网直连，无需为整个 Wi-Fi 停止 Stash。
 - 导入后确认其他覆写没有替换本文件的 DNS 配置。
 
-独立 DoH 应用、浏览器安全 DNS、iCloud Private Relay、其他 VPN 和应用自己的网络机制，会影响实际 DNS 出口。需要采用本配置 DNS 策略的应用，应关闭自行指定的 DNS。mDNS、Bonjour 和系统绕过隧道的通信超出这里的上游 DNS 与 53 端口规则范围。Stash 停止、系统绕过隧道、订阅为空时，配置无法提供完整的断网保护。Stash 会把空的远程节点集合视为 `DIRECT`，因此导入和更新后需要确认节点集合正常。
+独立 DoH 应用、浏览器安全 DNS、iCloud Private Relay、其他 VPN 和应用自己的网络机制，会影响实际 DNS 出口。需要采用本配置 DNS 策略的应用，应关闭自行指定的 DNS。mDNS、Bonjour 和系统绕过隧道的通信超出这里的上游 DNS 与 53 端口规则范围。Stash 停止或系统绕过隧道时，配置无法提供完整的断网保护。地区组的 `REJECT` 保护只控制通过这些组的连接，导入和更新后仍需要确认机场节点加载正常。
 
 ## 省电设置
 
-“默认代理”、服务分组和“其他地区”使用手动选择，通过 `interval: -1` 关闭这些分组的定时测速。香港、日本、美国、新加坡、台湾、韩国和欧洲使用 `url-test`，每 600 秒测速，并设置 `lazy: true`，一段时间未使用的地区跳过自动测速。
+“默认代理”、服务分组和“其他地区”使用手动选择，通过 `interval: -1` 关闭这些分组自身的定时测速。香港、日本、美国、新加坡、台湾、韩国和欧洲使用 `url-test`，每 600 秒测速，并设置 `lazy: true`，一段时间未使用的地区跳过自身的自动测速。
+
+隐藏的流媒体 `fallback` 组同样使用 600 秒周期和 `lazy: true`。流媒体使用期间，这些组会递归检查对应地区以及“默认代理”引用的节点，用于故障切换和恢复检测。“其他地区”的节点也可能参与该递归检查，手动选择结果保持不变。多个组引用同一节点时共享其测速结果；相关行为见 [延迟测试文档](https://stash.wiki/proxy-protocols/proxy-benchmark)。
 
 地区分组自动选择可用的低延迟节点。`tolerance: 50` 表示新节点比当前节点快超过 50 ms 才会切换；当前节点测速失败时立即切换。机场远程代理集使用 `https://www.gstatic.com/generate_204`，超时为 5 秒。测速结果表示连通性和延迟，不能表示下载带宽或服务解锁能力。具体语义见 [策略组文档](https://stash.wiki/proxy-protocols/proxy-groups)、[延迟测试文档](https://stash.wiki/proxy-protocols/proxy-benchmark)和 [远程代理集文档](https://stash.wiki/proxy-protocols/proxy-providers)。
 
@@ -264,11 +270,12 @@ python stash/check_config.py --online --proxy http://127.0.0.1:7890
 
 本地配置与上游联网检查最近验证于 2026-11-05：
 
-- 13 项本地检查通过，涵盖主配置与机场模板的 YAML 解析、重复键、分组引用、地区过滤表达式、内置 DNS 加密、Fake-IP 例外、域名与 IP 规则顺序、流媒体优先级、Sukka 拦截覆盖与公司域名豁免、机场覆写范围和图标集。
+- 15 项本地检查通过，涵盖主配置与机场模板的 YAML 解析、重复键、分组引用、地区过滤表达式、空组保护、流媒体故障切换结构、内置 DNS 加密、Fake-IP 例外、域名与 IP 规则顺序、流媒体优先级、Sukka 拦截覆盖与公司域名豁免、机场覆写范围和图标集。
 - 8 个节点分类通过 `include-all: true` 汇集节点，7 个地区自动测速，“其他地区”手动选择。主配置的 `proxy-providers` 为空字典。机场模板只定义一个代理集及展示字段，名称通过 YAML 锚点复用，订阅地址为占位值。
 - 公共 DNS 上游均为 HTTPS DNS，只有公司域名 policy 使用 `system`。`follow-rule` 关闭，两个 IPv6 解析开关关闭，53 端口提前拦截位于全部分流规则之前。
 - 配置包含 47 个远程集合与 3 个 inline 集合，引用检查通过。远程集合已通过规则类型和 CIDR 格式检查；Sukka `non_ip` 集合中附带的 IP 条目均包含 `no-resolve`，不会自行触发域名解析。
-- 地区流媒体直接引用相应节点组，通用流媒体引用默认代理；主配置与图标集包含 15 个展示组，引用检查确认全部目标有效。
+- 7 条地区流媒体规则引用 6 个隐藏的故障切换组，通用流媒体引用默认代理；主配置包含 15 个展示组，图标集对应这 15 个组。引用检查确认全部目标有效且不存在循环依赖。
+- 8 个节点分类显式包含 `REJECT`，全部地区过滤均保留 `REJECT` 并排除 `DIRECT`。Windows 0.1.47 的只读 `/proxies` 查询确认内置 `REJECT` 返回 `alive: false`、`state: unhealthy`；本次未加载新配置进行地区断线与恢复演练。
 - “其他地区”的节点过滤与各自动地区组互不重复，订阅提示项从该分类排除。韩国和欧洲流媒体分别引用对应地区组，英国、德国、荷兰等节点统一归入欧洲。
 - 秋风完整规则下载与 YAML 解析通过，Windows 已加载全部 976 条，包含 960 条精确域名、12 条域名后缀和 4 条关键词规则。`ad-api.4pyun.com` 与 `unityads.unity3d.com` 在规则诊断中命中提前拒绝，广告条件明确排除公司域名集合。
 - 公司 VPN 设置已在 Windows 0.1.47 验证。公司域名命中 `corporate-domains`，Stash DNS API 确认解析来源为 `system`。本机使用系统代理绕过和 5 条隧道网段排除，内网 HTTP 请求返回 `200`。

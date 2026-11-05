@@ -50,7 +50,7 @@ proxy-groups:
   - name: Apple
     type: select
     icon: https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/apple.png?v=2
-    proxies: [DIRECT, 默认代理]
+    proxies: [DIRECT, 默认代理, 美国]
     interval: -1
     lazy: true
   - name: Microsoft
@@ -71,70 +71,118 @@ proxy-groups:
     proxies: [DIRECT, 香港, 日本, 美国, 新加坡, 台湾, 韩国, 欧洲, 其他地区]
     interval: -1
     lazy: true
+  # REJECT 保证地区组始终非空；自动选择会跳过这个不可用出口。
   - name: 香港
     type: url-test
     icon: https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/hong-kong.png?v=2
+    proxies: [REJECT]
     include-all: true
-    filter: '(?i)🇭🇰|香港|(^|[^a-z])hkg?([^a-z]|$)|hong[ -]*kong'
+    filter: '(?i)^REJECT$|🇭🇰|香港|(^|[^a-z])hkg?([^a-z]|$)|hong[ -]*kong'
     interval: 600
     tolerance: 50
     lazy: true
   - name: 日本
     type: url-test
     icon: https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/japan.png?v=2
+    proxies: [REJECT]
     include-all: true
-    filter: '(?i)🇯🇵|日本|东京|東京|大阪|京都|(^|[^a-z])jpn?([^a-z]|$)|japan|tokyo|osaka'
+    filter: '(?i)^REJECT$|🇯🇵|日本|东京|東京|大阪|京都|(^|[^a-z])jpn?([^a-z]|$)|japan|tokyo|osaka'
     interval: 600
     tolerance: 50
     lazy: true
   - name: 美国
     type: url-test
     icon: https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/united-states.png?v=2
+    proxies: [REJECT]
     include-all: true
-    filter: '(?i)🇺🇸|美国|美國|纽约|紐約|洛杉矶|洛杉磯|旧金山|舊金山|西雅图|西雅圖|(^|[^a-z])usa?([^a-z]|$)|america|united[ -]*states'
+    filter: '(?i)^REJECT$|🇺🇸|美国|美國|纽约|紐約|洛杉矶|洛杉磯|旧金山|舊金山|西雅图|西雅圖|(^|[^a-z])usa?([^a-z]|$)|america|united[ -]*states'
     interval: 600
     tolerance: 50
     lazy: true
   - name: 新加坡
     type: url-test
     icon: https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/singapore.png?v=2
+    proxies: [REJECT]
     include-all: true
-    filter: '(?i)🇸🇬|新加坡|狮城|獅城|(^|[^a-z])sgp?([^a-z]|$)|singapore'
+    filter: '(?i)^REJECT$|🇸🇬|新加坡|狮城|獅城|(^|[^a-z])sgp?([^a-z]|$)|singapore'
     interval: 600
     tolerance: 50
     lazy: true
   - name: 台湾
     type: url-test
     icon: https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/taiwan.png?v=2
+    proxies: [REJECT]
     include-all: true
-    filter: '(?i)🇹🇼|台湾|台灣|臺灣|台北|臺北|高雄|(^|[^a-z])twn?([^a-z]|$)|taiwan'
+    filter: '(?i)^REJECT$|🇹🇼|台湾|台灣|臺灣|台北|臺北|高雄|(^|[^a-z])twn?([^a-z]|$)|taiwan'
     interval: 600
     tolerance: 50
     lazy: true
   - name: 韩国
     type: url-test
     icon: https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/korea.png?v=2
+    proxies: [REJECT]
     include-all: true
-    filter: '(?i)🇰🇷|韩国|韓國|首尔|首爾|釜山|(^|[^a-z])kor?([^a-z]|$)|(^|[^a-z])kr([^a-z]|$)|korea|seoul|busan'
+    filter: '(?i)^REJECT$|🇰🇷|韩国|韓國|首尔|首爾|釜山|(^|[^a-z])kor?([^a-z]|$)|(^|[^a-z])kr([^a-z]|$)|korea|seoul|busan'
     interval: 600
     tolerance: 50
     lazy: true
   - name: 欧洲
     type: url-test
     icon: https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/europe.png?v=2
+    proxies: [REJECT]
     include-all: true
     # 英国、德国、荷兰等欧洲节点统一参与测速。
-    filter: '(?i)🇪🇺|🇬🇧|🇩🇪|🇳🇱|🇫🇷|🇮🇪|🇨🇭|🇸🇪|🇫🇮|🇳🇴|🇩🇰|🇮🇸|🇪🇸|🇵🇹|🇮🇹|🇦🇹|🇧🇪|🇱🇺|🇵🇱|🇨🇿|🇸🇰|🇭🇺|🇷🇴|🇧🇬|🇬🇷|🇪🇪|🇱🇻|🇱🇹|🇸🇮|🇭🇷|🇷🇸|🇺🇦|欧洲|歐洲|英国|英國|伦敦|倫敦|德国|德國|法兰克福|法蘭克福|荷兰|荷蘭|阿姆斯特丹|法国|法國|巴黎|爱尔兰|愛爾蘭|瑞士|瑞典|芬兰|芬蘭|挪威|丹麦|丹麥|冰岛|冰島|西班牙|葡萄牙|意大利|義大利|奥地利|奧地利|比利时|比利時|卢森堡|盧森堡|波兰|波蘭|捷克|斯洛伐克|匈牙利|罗马尼亚|羅馬尼亞|保加利亚|保加利亞|希腊|希臘|爱沙尼亚|愛沙尼亞|拉脱维亚|拉脫維亞|立陶宛|斯洛文尼亚|斯洛文尼亞|克罗地亚|克羅地亞|塞尔维亚|塞爾維亞|乌克兰|烏克蘭|(^|[^a-z])(eu|uk|gbr|deu?|nld?|fra?|irl|che|swe|fin|nor|dnk|isl|esp|prt|ita|aut|bel|lux|pol|cze|svk|hun|rou|bgr|grc|est|lva|ltu|svn|hrv|srb|ukr)([^a-z]|$)|europe|united[ -]*kingdom|britain|london|germany|frankfurt|netherlands|amsterdam|france|paris|ireland|switzerland|sweden|finland|norway|denmark|iceland|spain|portugal|italy|austria|belgium|luxembourg|poland|czech|slovakia|hungary|romania|bulgaria|greece|estonia|latvia|lithuania|slovenia|croatia|serbia|ukraine'
+    filter: '(?i)^REJECT$|🇪🇺|🇬🇧|🇩🇪|🇳🇱|🇫🇷|🇮🇪|🇨🇭|🇸🇪|🇫🇮|🇳🇴|🇩🇰|🇮🇸|🇪🇸|🇵🇹|🇮🇹|🇦🇹|🇧🇪|🇱🇺|🇵🇱|🇨🇿|🇸🇰|🇭🇺|🇷🇴|🇧🇬|🇬🇷|🇪🇪|🇱🇻|🇱🇹|🇸🇮|🇭🇷|🇷🇸|🇺🇦|欧洲|歐洲|英国|英國|伦敦|倫敦|德国|德國|法兰克福|法蘭克福|荷兰|荷蘭|阿姆斯特丹|法国|法國|巴黎|爱尔兰|愛爾蘭|瑞士|瑞典|芬兰|芬蘭|挪威|丹麦|丹麥|冰岛|冰島|西班牙|葡萄牙|意大利|義大利|奥地利|奧地利|比利时|比利時|卢森堡|盧森堡|波兰|波蘭|捷克|斯洛伐克|匈牙利|罗马尼亚|羅馬尼亞|保加利亚|保加利亞|希腊|希臘|爱沙尼亚|愛沙尼亞|拉脱维亚|拉脫維亞|立陶宛|斯洛文尼亚|斯洛文尼亞|克罗地亚|克羅地亞|塞尔维亚|塞爾維亞|乌克兰|烏克蘭|(^|[^a-z])(eu|uk|gbr|deu?|nld?|fra?|irl|che|swe|fin|nor|dnk|isl|esp|prt|ita|aut|bel|lux|pol|cze|svk|hun|rou|bgr|grc|est|lva|ltu|svn|hrv|srb|ukr)([^a-z]|$)|europe|united[ -]*kingdom|britain|london|germany|frankfurt|netherlands|amsterdam|france|paris|ireland|switzerland|sweden|finland|norway|denmark|iceland|spain|portugal|italy|austria|belgium|luxembourg|poland|czech|slovakia|hungary|romania|bulgaria|greece|estonia|latvia|lithuania|slovenia|croatia|serbia|ukraine'
     interval: 600
     tolerance: 50
     lazy: true
   - name: 其他地区
     type: select
     icon: https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/other-regions.png?v=2
+    # 首次使用此手动组时，选择需要的机场节点。
+    proxies: [REJECT]
     include-all: true
     # 排除已命名地区与订阅提示；其余节点在此手动选择。
-    filter: '(?i)^(?!.*(?:🇭🇰|香港|(^|[^a-z])hkg?([^a-z]|$)|hong[ -]*kong|🇯🇵|日本|东京|東京|大阪|京都|(^|[^a-z])jpn?([^a-z]|$)|japan|tokyo|osaka|🇺🇸|美国|美國|纽约|紐約|洛杉矶|洛杉磯|旧金山|舊金山|西雅图|西雅圖|(^|[^a-z])usa?([^a-z]|$)|america|united[ -]*states|🇸🇬|新加坡|狮城|獅城|(^|[^a-z])sgp?([^a-z]|$)|singapore|🇹🇼|台湾|台灣|臺灣|台北|臺北|高雄|(^|[^a-z])twn?([^a-z]|$)|taiwan|🇰🇷|韩国|韓國|首尔|首爾|釜山|(^|[^a-z])kor?([^a-z]|$)|(^|[^a-z])kr([^a-z]|$)|korea|seoul|busan|🇪🇺|🇬🇧|🇩🇪|🇳🇱|🇫🇷|🇮🇪|🇨🇭|🇸🇪|🇫🇮|🇳🇴|🇩🇰|🇮🇸|🇪🇸|🇵🇹|🇮🇹|🇦🇹|🇧🇪|🇱🇺|🇵🇱|🇨🇿|🇸🇰|🇭🇺|🇷🇴|🇧🇬|🇬🇷|🇪🇪|🇱🇻|🇱🇹|🇸🇮|🇭🇷|🇷🇸|🇺🇦|欧洲|歐洲|英国|英國|伦敦|倫敦|德国|德國|法兰克福|法蘭克福|荷兰|荷蘭|阿姆斯特丹|法国|法國|巴黎|爱尔兰|愛爾蘭|瑞士|瑞典|芬兰|芬蘭|挪威|丹麦|丹麥|冰岛|冰島|西班牙|葡萄牙|意大利|義大利|奥地利|奧地利|比利时|比利時|卢森堡|盧森堡|波兰|波蘭|捷克|斯洛伐克|匈牙利|罗马尼亚|羅馬尼亞|保加利亚|保加利亞|希腊|希臘|爱沙尼亚|愛沙尼亞|拉脱维亚|拉脫維亞|立陶宛|斯洛文尼亚|斯洛文尼亞|克罗地亚|克羅地亞|塞尔维亚|塞爾維亞|乌克兰|烏克蘭|(^|[^a-z])(eu|uk|gbr|deu?|nld?|fra?|irl|che|swe|fin|nor|dnk|isl|esp|prt|ita|aut|bel|lux|pol|cze|svk|hun|rou|bgr|grc|est|lva|ltu|svn|hrv|srb|ukr)([^a-z]|$)|europe|united[ -]*kingdom|britain|london|germany|frankfurt|netherlands|amsterdam|france|paris|ireland|switzerland|sweden|finland|norway|denmark|iceland|spain|portugal|italy|austria|belgium|luxembourg|poland|czech|slovakia|hungary|romania|bulgaria|greece|estonia|latvia|lithuania|slovenia|croatia|serbia|ukraine|剩余流量|剩餘流量|套餐到期|订阅到期|訂閱到期|距离下次重置|距離下次重置|流量重置|到期时间|到期時間|traffic[ _-]*remaining|expire[sd]?|reset[ _-]*date)).+'
+    filter: '(?i)^(?!DIRECT$)(?!.*(?:🇭🇰|香港|(^|[^a-z])hkg?([^a-z]|$)|hong[ -]*kong|🇯🇵|日本|东京|東京|大阪|京都|(^|[^a-z])jpn?([^a-z]|$)|japan|tokyo|osaka|🇺🇸|美国|美國|纽约|紐約|洛杉矶|洛杉磯|旧金山|舊金山|西雅图|西雅圖|(^|[^a-z])usa?([^a-z]|$)|america|united[ -]*states|🇸🇬|新加坡|狮城|獅城|(^|[^a-z])sgp?([^a-z]|$)|singapore|🇹🇼|台湾|台灣|臺灣|台北|臺北|高雄|(^|[^a-z])twn?([^a-z]|$)|taiwan|🇰🇷|韩国|韓國|首尔|首爾|釜山|(^|[^a-z])kor?([^a-z]|$)|(^|[^a-z])kr([^a-z]|$)|korea|seoul|busan|🇪🇺|🇬🇧|🇩🇪|🇳🇱|🇫🇷|🇮🇪|🇨🇭|🇸🇪|🇫🇮|🇳🇴|🇩🇰|🇮🇸|🇪🇸|🇵🇹|🇮🇹|🇦🇹|🇧🇪|🇱🇺|🇵🇱|🇨🇿|🇸🇰|🇭🇺|🇷🇴|🇧🇬|🇬🇷|🇪🇪|🇱🇻|🇱🇹|🇸🇮|🇭🇷|🇷🇸|🇺🇦|欧洲|歐洲|英国|英國|伦敦|倫敦|德国|德國|法兰克福|法蘭克福|荷兰|荷蘭|阿姆斯特丹|法国|法國|巴黎|爱尔兰|愛爾蘭|瑞士|瑞典|芬兰|芬蘭|挪威|丹麦|丹麥|冰岛|冰島|西班牙|葡萄牙|意大利|義大利|奥地利|奧地利|比利时|比利時|卢森堡|盧森堡|波兰|波蘭|捷克|斯洛伐克|匈牙利|罗马尼亚|羅馬尼亞|保加利亚|保加利亞|希腊|希臘|爱沙尼亚|愛沙尼亞|拉脱维亚|拉脫維亞|立陶宛|斯洛文尼亚|斯洛文尼亞|克罗地亚|克羅地亞|塞尔维亚|塞爾維亞|乌克兰|烏克蘭|(^|[^a-z])(eu|uk|gbr|deu?|nld?|fra?|irl|che|swe|fin|nor|dnk|isl|esp|prt|ita|aut|bel|lux|pol|cze|svk|hun|rou|bgr|grc|est|lva|ltu|svn|hrv|srb|ukr)([^a-z]|$)|europe|united[ -]*kingdom|britain|london|germany|frankfurt|netherlands|amsterdam|france|paris|ireland|switzerland|sweden|finland|norway|denmark|iceland|spain|portugal|italy|austria|belgium|luxembourg|poland|czech|slovakia|hungary|romania|bulgaria|greece|estonia|latvia|lithuania|slovenia|croatia|serbia|ukraine|剩余流量|剩餘流量|套餐到期|订阅到期|訂閱到期|距离下次重置|距離下次重置|流量重置|到期时间|到期時間|traffic[ _-]*remaining|expire[sd]?|reset[ _-]*date)).+'
     interval: -1
+    lazy: true
+
+  # 按地区优先、默认代理备用；隐藏辅助组仍定期检查恢复情况。
+  - name: 流媒体-日本
+    type: fallback
+    hidden: true
+    proxies: [日本, 默认代理]
+    interval: 600
+    lazy: true
+  - name: 流媒体-美国
+    type: fallback
+    hidden: true
+    proxies: [美国, 默认代理]
+    interval: 600
+    lazy: true
+  - name: 流媒体-欧洲
+    type: fallback
+    hidden: true
+    proxies: [欧洲, 默认代理]
+    interval: 600
+    lazy: true
+  - name: 流媒体-韩国
+    type: fallback
+    hidden: true
+    proxies: [韩国, 默认代理]
+    interval: 600
+    lazy: true
+  - name: 流媒体-香港
+    type: fallback
+    hidden: true
+    proxies: [香港, 默认代理]
+    interval: 600
+    lazy: true
+  - name: 流媒体-台湾
+    type: fallback
+    hidden: true
+    proxies: [台湾, 默认代理]
+    interval: 600
     lazy: true
 
 rule-providers:
@@ -482,14 +530,14 @@ rules:
   - RULE-SET,microsoft-cdn,DIRECT
   - RULE-SET,microsoft,Microsoft
   # 日本集合先于美国集合，两者均包含 Hulu Japan。
-  - RULE-SET,stream-jp,日本
-  - RULE-SET,stream-us,美国
-  - RULE-SET,stream-eu,欧洲
-  - RULE-SET,stream-kr,韩国
+  - RULE-SET,stream-jp,流媒体-日本
+  - RULE-SET,stream-us,流媒体-美国
+  - RULE-SET,stream-eu,流媒体-欧洲
+  - RULE-SET,stream-kr,流媒体-韩国
   # Bilibili 国际版也被香港集合收录，专用策略优先。
-  - RULE-SET,stream-biliintl,台湾
-  - RULE-SET,stream-hk,香港
-  - RULE-SET,stream-tw,台湾
+  - RULE-SET,stream-biliintl,流媒体-台湾
+  - RULE-SET,stream-hk,流媒体-香港
+  - RULE-SET,stream-tw,流媒体-台湾
   - RULE-SET,stream,默认代理
   - RULE-SET,telegram,默认代理
   - RULE-SET,download-domain,下载
