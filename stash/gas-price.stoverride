@@ -1,7 +1,7 @@
 name: '哈尔滨油价'
 desc: '在首页面板显示哈尔滨的中石化油价、各型号涨跌金额和更新时间，每小时刷新。'
 category: '生活信息'
-version: '1.0.0'
+version: '1.0.1'
 
 tiles:
   - name: harbin-gas-price
@@ -68,7 +68,7 @@ script-providers:
           if (!priceData || !/^\d{4}-\d{2}-\d{2}/.test(priceData.START_DATE || '')) {
             throw new Error('中石化接口缺少油价或生效日期');
           }
-          const fuels = [['GAS_92', 'GAS_92', '92号'], ['GAS_95', 'GAS_95', '95号'], ['GAS_98', 'GAS_98', '98号'], ['CHAI_0', 'CHECHAI_0', '0号柴油']];
+          const fuels = [['GAS_92', 'GAS_92', '92号'], ['GAS_95', 'GAS_95', '95号'], ['GAS_98', 'GAS_98', '98号']];
           const lines = fuels.map(([flag, key, label]) => {
             if (area.areaCheck[flag] !== 'Y') throw new Error('中石化接口未提供油品：' + label);
             const price = readNumber(priceData[key], key);
