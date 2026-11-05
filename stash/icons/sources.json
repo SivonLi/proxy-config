@@ -36,18 +36,48 @@
     "url": "https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Download.png"
   },
   {
+    "id": "gitlab",
+    "name": "GitLab",
+    "url": "https://about.gitlab.com/images/press/gitlab-logo-500-rgb.png"
+  },
+  {
+    "id": "speedtest",
+    "name": "测速",
+    "url": "https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Speedtest.png"
+  },
+  {
+    "id": "europe",
+    "name": "欧洲流媒体",
+    "groups": ["欧洲", "欧洲流媒体"],
+    "url": "https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Europe_Map.png"
+  },
+  {
+    "id": "korea",
+    "name": "韩国流媒体",
+    "groups": ["韩国", "韩国流媒体"],
+    "url": "https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Korea.png"
+  },
+  {
+    "id": "southeast-asia",
+    "name": "东南亚流媒体",
+    "url": "https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/StreamingSE.png"
+  },
+  {
     "id": "hong-kong",
     "name": "香港",
+    "groups": ["香港", "香港流媒体"],
     "url": "https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Hong_Kong.png"
   },
   {
     "id": "japan",
     "name": "日本",
+    "groups": ["日本", "日本流媒体"],
     "url": "https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Japan.png"
   },
   {
     "id": "united-states",
     "name": "美国",
+    "groups": ["美国", "美国流媒体"],
     "url": "https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/United_States.png"
   },
   {
@@ -58,6 +88,12 @@
   {
     "id": "taiwan",
     "name": "台湾",
+    "groups": ["台湾", "台湾流媒体"],
     "url": "https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Taiwan.png"
+  },
+  {
+    "id": "other-regions",
+    "name": "其他地区",
+    "url": "https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/World_Map.png"
   }
 ]

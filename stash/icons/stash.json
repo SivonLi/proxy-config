@@ -1,6 +1,6 @@
 {
   "name": "Sivon Stash 圆角图标",
-  "description": "12 个策略组图标，统一圆角方形；应用使用官方标志，AI 使用 Apple Intelligence。",
+  "description": "24 个策略组图标，统一彩色圆角方形，包含地区流媒体与手动选择的其他地区。",
   "icons": [
     {
       "name": "默认代理",
@@ -31,6 +31,42 @@
       "url": "https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/download.png?v=2"
     },
     {
+      "name": "GitLab",
+      "url": "https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/gitlab.png?v=2"
+    },
+    {
+      "name": "测速",
+      "url": "https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/speedtest.png?v=2"
+    },
+    {
+      "name": "美国流媒体",
+      "url": "https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/united-states.png?v=2"
+    },
+    {
+      "name": "欧洲流媒体",
+      "url": "https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/europe.png?v=2"
+    },
+    {
+      "name": "日本流媒体",
+      "url": "https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/japan.png?v=2"
+    },
+    {
+      "name": "韩国流媒体",
+      "url": "https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/korea.png?v=2"
+    },
+    {
+      "name": "香港流媒体",
+      "url": "https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/hong-kong.png?v=2"
+    },
+    {
+      "name": "台湾流媒体",
+      "url": "https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/taiwan.png?v=2"
+    },
+    {
+      "name": "东南亚流媒体",
+      "url": "https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/southeast-asia.png?v=2"
+    },
+    {
       "name": "香港",
       "url": "https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/hong-kong.png?v=2"
     },
@@ -49,6 +85,18 @@
     {
       "name": "台湾",
       "url": "https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/taiwan.png?v=2"
+    },
+    {
+      "name": "韩国",
+      "url": "https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/korea.png?v=2"
+    },
+    {
+      "name": "欧洲",
+      "url": "https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/europe.png?v=2"
+    },
+    {
+      "name": "其他地区",
+      "url": "https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/other-regions.png?v=2"
     }
   ]
 }

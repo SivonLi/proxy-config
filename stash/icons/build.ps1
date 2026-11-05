@@ -1,5 +1,7 @@
 param(
-    [string]$Magick = 'magick'
+    [string]$Magick = 'magick',
+    [string[]]$Id = @(),
+    [switch]$UseCachedSources
 )
 
 $ErrorActionPreference = 'Stop'
@@ -12,6 +14,12 @@ function Invoke-Magick {
 }
 
 $sources = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'sources.json') -Raw -Encoding utf8 | ConvertFrom-Json
+if ($Id.Count -gt 0) {
+    foreach ($requestedId in $Id) {
+        if ($requestedId -notin $sources.id) { throw "ICON_ID_UNKNOWN: $requestedId" }
+    }
+    $sources = @($sources | Where-Object { $_.id -in $Id })
+}
 $workDirectory = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..\.work\icon-sources'))
 $outputDirectory = Join-Path $PSScriptRoot 'rounded'
 New-Item -ItemType Directory -Force -Path $workDirectory, $outputDirectory | Out-Null
@@ -39,7 +47,13 @@ foreach ($source in $sources) {
     $sourcePath = Join-Path $workDirectory ($source.id + $extension)
     $symbolPath = Join-Path $workDirectory ($source.id + '-symbol.png')
     $outputPath = Join-Path $outputDirectory ($source.id + '.png')
-    Invoke-WebRequest -Uri $uri -OutFile $sourcePath -TimeoutSec 45
+    if ($UseCachedSources) {
+        if (-not (Test-Path -LiteralPath $sourcePath -PathType Leaf)) {
+            throw "ICON_SOURCE_MISSING: $($source.id)"
+        }
+    } else {
+        Invoke-WebRequest -Uri $uri -OutFile $sourcePath -TimeoutSec 45
+    }
 
     $cropArguments = @()
     if ($source.PSObject.Properties.Name -contains 'crop') {
