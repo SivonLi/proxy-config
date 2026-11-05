@@ -2,7 +2,7 @@
 
 ## 导入与选择节点
 
-使用 [stash.yaml](stash.yaml) 作为主配置，每个机场单独导入一份 [airport.stoverride](airport.stoverride)。在 Stash 的覆写页面，通过各自的开关启用或停用机场。适用于 iOS Stash 3.7.0，包括在 Apple silicon Mac 上运行的 iOS 版。原生 Stash for Mac 需要 4.4 及以上版本。规则预匹配功能在当前官方文档中仍标注为 Beta。
+使用 [stash.yaml](stash.yaml) 作为主配置，每个机场单独导入一份 [airport.stoverride](airport.stoverride)。在 Stash 的覆写页面，通过各自的开关启用或停用机场。适用于 iOS Stash 3.7.0，包括在 Apple silicon Mac 上运行的 iOS 版。原生 Stash for Mac 需要 4.4 及以上版本。Windows 已在 0.1.47 验证公司内网访问，需要同时完成下方的 Windows 设置。规则预匹配功能在当前官方文档中仍标注为 Beta。
 
 1. 下载下方的 `stash.yaml`，在 Stash 的配置页面通过本地文件导入，设为当前主配置。
 2. 下载 `airport.stoverride`。将 `&airport_name` 后面的 `'我的机场'` 改为机场名称，将 `url` 改为完整 HTTPS Clash 订阅地址。保留缩进、两侧单引号，以及 `&airport_name` 和 `*airport_name`。
@@ -77,6 +77,7 @@ pwsh -File stash/icons/build.ps1 -Magick magick
 
 | 流量 | 默认出口 |
 | --- | --- |
+| `guorenpcic.com` 及其子域名 | DIRECT；Windows 配合系统代理绕过与 aTrust 路由 |
 | 局域网域名与私有地址 | DIRECT |
 | 1Password 专用服务、更新与附件 | DIRECT |
 | AI 与 Apple Intelligence | AI，初始选择美国 |
@@ -108,7 +109,30 @@ Spotify 的 17 个域名、1 个关键词和 1 个 IP 条目来自 [Sukka 的 Sp
 
 Apple 的 `icloud.com`、`icloud-content.com` 和推送服务使用 Apple 分组，初始选择 `DIRECT`。更新配置后，需要在策略页面确认 Apple 的当前选择；已保存的选择可能继续生效。
 
-Sukka 的 `direct` 集合包含 macOS 下载工具等程序的 `PROCESS-NAME` 条目。连接匹配到这些条目时会直连，iOS 忽略进程条目。公司 VPN 的接口和路由由实际设备决定，此文件仅提供局域网直连规则。
+Sukka 的 `direct` 集合包含 macOS 下载工具等程序的 `PROCESS-NAME` 条目。连接匹配到这些条目时会直连，iOS 忽略进程条目。
+
+## 公司 VPN（Windows）
+
+公司域名沿用 [mihomo 覆写](../mihomo/AIsouler.js)中的 `guorenpcic.com`。主配置通过 `corporate-domains` 集合统一管理分流、`nameserver-policy` 和 `fake-ip-filter`：公司域名交给系统 DNS 解析，返回真实 IP，并优先匹配 `DIRECT`。字段用法见 [Stash DNS 文档](https://stash.wiki/features/dns-server)。aTrust 负责建立公司 VPN、提供内网解析能力和业务路由。
+
+在 Stash for Windows 完成以下设置：
+
+1. 在“设置 → 网络 → 绕过列表”保留现有条目，追加 `guorenpcic.com;*.guorenpcic.com`。遵循系统代理设置的应用会直接连接公司地址。
+2. 在“设置 → 隧道 → 排除的网段”添加以下 5 条，让这些地址通过 Windows 路由访问。修改此列表会重载隧道，连接可能短暂中断。
+
+```text
+10.75.0.0/16
+10.100.11.24/32
+10.78.137.33/32
+172.18.20.200/32
+172.31.200.5/32
+```
+
+Windows 0.1.47 的网段排除最多接受 128 条。上述范围覆盖 2026-11-05 本机 aTrust 的全部 157 条业务路由，其中包含 mihomo 清单的 154 条。`10.75.0.0/16` 排除整个 `10.75.*.*` 范围，其余 4 个地址分别排除。实际可访问的资源由 aTrust 的路由与权限决定；公司增加其他地址范围时，需要更新这些排除项。
+
+访问内网时保持 aTrust 已连接，Windows 的“断网保护”保持关闭，让排除的流量能够通过公司 VPN。上述 Windows 选项保存在本机，需要与 YAML 主配置一起设置。显式固定 HTTP / SOCKS 代理且忽略系统绕过列表的应用，需要在应用中将公司域名设置为直连。
+
+本机验证时，公司目标由系统 DNS 返回真实内网地址，Windows 路由选择 `Sangfor aTrust VNIC`（接口名“本地连接”）。使用系统代理自动绕过的 HTTP 请求返回 `200`。Windows 设置与 iOS、macOS 分别管理；其他平台的 VPN 共存方式参考 [Stash 官方说明](https://stash.wiki/faq/conflict-with-vpn)。
 
 ## DNS 与接管范围
 
@@ -116,6 +140,7 @@ Sukka 的 `direct` 集合包含 macOS 下载工具等程序的 `PROCESS-NAME` �
 
 | 查询用途 | 解析方式 | 出口 |
 | --- | --- | --- |
+| 公司域名 `guorenpcic.com` 及其子域名 | system，由系统和 aTrust 提供解析 | 系统解析通道 |
 | 机场节点域名、DNS Bootstrap | 阿里 DoH | 独立直连通道 |
 | 需要直连的服务、局域网真实解析 | 阿里 DoH | DIRECT |
 | 未命中域名规则、需要判断 IP 的连接 | 阿里 DoH | DIRECT |
@@ -126,19 +151,19 @@ Fake-IP 把应用得到的地址与目标域名关联起来。对于支持域名
 
 IP 规则阶段得到的地址用于判断出口。使用支持域名转发的 TCP 代理时，最终仍交给节点解析目标。DNS 服务器使用 IP 地址，机场节点域名通过独立通道解析，启动代理不依赖已经建立的代理连接。
 
-内置 DNS 的上述上游查询均使用 DoH，保持 TLS 证书校验。国内解析服务可以看到直连域名、节点域名和需要判断 IP 的未知域名查询。未知境外域名也可能进入 IP 判断阶段。机场节点端的 DNS 由机场控制。
+公共 DNS 上游查询使用 DoH，保持 TLS 证书校验。公司域名使用 `system` 例外，可能使用 UDP / TCP 53，其解析路径与传输保护由系统和 aTrust 决定。国内解析服务可以看到其他直连域名、节点域名和需要判断 IP 的未知域名查询。未知境外域名也可能进入 IP 判断阶段。机场节点端的 DNS 由机场控制。
 
 **UDP 代理解析有独立限制。** 根据 [Stash 协议文档](https://stash.wiki/proxy-protocols/proxy-types)，Stash 转发 UDP 时需要目标 IP，会通过代理发起 DNS 查询；`udp-nameserver` 仅支持 UDP。使用加密代理时，本机到节点这一段由代理保护，节点到 DNS 服务器这一段仍可能使用明文 UDP 53。`dns.nameserver` 中的 DoH 无法保证这一段也加密。WireGuard、MASQUE 等隧道协议还有各自的 DNS 配置，使用此类机场节点时需要单独核查。
 
-规则首条为 `DST-PORT,53,REJECT,pre-matching`，阻止进入 Stash 分流引擎的 TCP、UDP 53 端口连接，覆盖 IPv4 和 IPv6。`pre-matching` 是 3.7 新增的提前拒绝选项：iOS 在读取连接数据前拒绝，UDP 在首个数据包阶段拒绝，从而减少连接处理。已交给 Stash 内置 DNS 服务处理的查询，使用上述 DoH 上游。这条规则的控制范围是进入分流引擎的连接，不包括机场服务器自己的 DNS 请求。选项语义与支持的规则类型见 [规则类型文档](https://stash.wiki/rules/rule-types)。
+规则首条为 `DST-PORT,53,REJECT,pre-matching`，阻止进入 Stash 分流引擎的 TCP、UDP 53 端口连接，覆盖 IPv4 和 IPv6。`pre-matching` 是 3.7 新增的提前拒绝选项：iOS 在读取连接数据前拒绝，UDP 在首个数据包阶段拒绝，从而减少连接处理。Stash 内置 DNS 服务按上述公共 DoH 和公司域名 policy 处理查询。这条规则的控制范围是进入分流引擎的连接，不包括系统绕过流量、公司 VPN 内的独立 DNS 通信和机场服务器自己的 DNS 请求。选项语义与支持的规则类型见 [规则类型文档](https://stash.wiki/rules/rule-types)。
 
 提前拒绝的请求不会出现在连接列表中。核心日志按目标限制记录频率；需要确认匹配阶段时，可使用 [HTTP API](https://stash.wiki/features/http-api) 的 `/rules/match` 查看 `stage` 字段。
 
-仅由路由器或公司 DNS 解析的内网域名，公共 DoH 通常无法解析。可以通过私有 IP 访问设备，或在 `hosts` 中填写内网域名与地址。需要动态解析内网域名时，必须配置能解析这些名称的内网 DoH、DoT 或 DoQ 服务。发给公共 DoH 的内网域名会对该解析服务可见。
+仅由路由器或公司 DNS 解析的内网域名，公共 DoH 通常无法解析。当前公司域名通过专用 policy 使用系统解析。其他内网域名可以通过 `hosts` 指定地址，或为其单独配置可用的内网 DNS；内网 DNS 支持 DoH、DoT 或 DoQ 时可使用对应的加密协议。发给公共 DoH 的内网域名会对该解析服务可见。
 
 顶层 `ipv6: false` 让 Stash 自身只解析 IPv4，`dns.ipv6: false` 让应用 DNS 查询不返回 AAAA 记录。这两个设置控制 DNS 解析，直接访问 IPv6 地址的流量仍需要 Tunnel IPv6 路由接管。
 
-Fake-IP 的真实地址例外只包含局域网集合。每种本地 DNS 用途配置一个上游，由 Stash 管理缓存和后台刷新。Stash 自带乐观 DNS 缓存，缓存过期时继续使用已有结果，并在后台更新。
+Fake-IP 的真实地址例外包含公司域名与局域网集合。公共 DNS 的每种查询用途配置一个 DoH 上游，公司域名由系统解析。Stash 自带乐观 DNS 缓存，缓存过期时继续使用已有结果，并在后台更新。
 
 DNS 出口检测网站展示的是递归 DNS 访问权威 DNS 时的出口。出现国内解析器与本配置的国内直连、未知域名 IP 判断可以一致，单凭这个结果无法判定设备发生了明文 DNS 泄漏。检查时需要结合目标域名、命中规则、实际代理节点，以及设备是否向外发送了明文 53 端口请求。
 
@@ -175,20 +200,21 @@ python stash/check_config.py --online --proxy http://127.0.0.1:7890
 
 `--proxy` 仅用于下载公开规则，DoH 检查不指定 HTTP 代理。代理端口按本机配置填写。联网检查会访问真实公开服务；解析结果变化时，脚本直接报告失败。
 
-2026-11-04 完成以下检查：
+本地配置和 Windows 内网访问最近验证于 2026-11-05，上游联网检查记录为 2026-11-04：
 
 - 11 项本地检查通过，涵盖主配置与机场模板的 YAML 解析、重复键、分组引用、地区过滤表达式、内置 DNS 加密、Fake-IP 例外、域名与 IP 规则顺序、机场覆写范围和图标集。
 - 5 个地区组均通过 `include-all: true` 汇集节点，主配置的 `proxy-providers` 为空字典。机场模板只定义一个代理集及展示字段，名称通过 YAML 锚点复用，订阅地址为占位值。
-- 内置 DNS 的全部上游均为 HTTPS DNS，`follow-rule` 关闭，两个 IPv6 解析开关关闭，53 端口提前拦截位于全部分流规则之前。
-- 配置包含 23 个远程集合与 4 个 inline 集合，引用检查通过。远程集合已通过规则类型和 CIDR 格式检查；`non_ip` 集合中附带的 IP 条目均包含 `no-resolve`，不会自行触发域名解析。
+- 公共 DNS 上游均为 HTTPS DNS，只有公司域名 policy 使用 `system`。`follow-rule` 关闭，两个 IPv6 解析开关关闭，53 端口提前拦截位于全部分流规则之前。
+- 配置包含 23 个远程集合与 5 个 inline 集合，引用检查通过。远程集合已通过规则类型和 CIDR 格式检查；`non_ip` 集合中附带的 IP 条目均包含 `no-resolve`，不会自行触发域名解析。
+- Windows 0.1.47 已加载主配置。公司域名命中 `corporate-domains`，Stash DNS API 确认解析来源为 `system`。系统代理绕过设置已保存生效，5 条隧道网段排除覆盖当前 157 条业务路由，内网 HTTP 请求返回 `200`。
 - 1Password 的 11 个域名条目使用 `domain` 集合，直连规则优先于下载和通用境外服务规则。
 - 山姆的 `api-sams.walmartmobile.cn`、`decoration-sams.walmartmobile.cn` 通过国内 DoH 返回 `157.148.16.212`，属于 Sukka 中国 IP 集合。
 - 万达的 `cinema-api-prd-mx.wandafilm.com`、`misc-api-prd-mx.wandafilm.com` 通过国内 DoH 返回 `120.53.82.119`，属于 Sukka 中国 IP 集合。
 - `223.5.5.5` 在不指定 HTTP 代理时，为 8 个业务域名返回有效的 DoH 答案，验证过程保持 TLS 证书校验。
 
-上述请求验证了上游服务的可用性。Windows 上的连接路径受当前系统网络设置影响，没有执行 Stash 的实际 DNS 规则。
+上游联网检查验证了规则服务与 DoH 的可用性；公司内网检查还验证了 Stash 的实际 DNS policy、Windows 系统代理绕过和 aTrust 路由。HTTP 检查未执行公司系统的账号登录或业务操作。
 
-当前工作区位于 Windows，没有 Apple 平台的 Stash 运行环境，也没有机场订阅凭证。Stash 原生配置加载、多个机场的界面开关、首页订阅信息、订阅节点协议、节点连通性、隧道接管和设备耗电需要结合实际设备验证。本地检查不能代替这些运行结果。
+当前工作区位于 Windows，没有 Apple 平台的 Stash 运行环境。Windows 的验证范围见上文；iOS、macOS 的 VPN 共存和设备耗电尚未实测。
 
 iMessage 图片上传速度需要结合发送时的连接记录判断。记录应包含上传域名、命中规则和实际出口。现有山姆、万达记录已经证明这些业务请求通过香港节点访问；当前没有 iMessage 的连接记录，无法确认其速度问题的原因。
 

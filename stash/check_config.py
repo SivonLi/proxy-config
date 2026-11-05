@@ -80,8 +80,8 @@ class ConfigTests(unittest.TestCase):
                             RULES.index(["RULE-SET", "global", "默认代理"]))
 
     def test_fake_ip_resolution_path(self):
-        self.assertEqual(CONFIG["dns"]["fake-ip-filter"], ["rule-set:lan"])
-        self.assertFalse(CONFIG["dns"].get("nameserver-policy"))
+        self.assertEqual(CONFIG["dns"]["fake-ip-filter"], ["rule-set:corporate-domains", "rule-set:lan"])
+        self.assertEqual(CONFIG["dns"]["nameserver-policy"], {"rule-set:corporate-domains": "system"})
         ip_phase = False
         for rule in RULES:
             if rule[0] == "RULE-SET":
@@ -100,7 +100,7 @@ class ConfigTests(unittest.TestCase):
 
     def test_ruleset_sources(self):
         inline = {name for name, provider in PROVIDERS.items() if provider.get("type") == "inline"}
-        self.assertEqual(inline, {"onepassword", "lark", "spotify", "spotify-ip"})
+        self.assertEqual(inline, {"corporate-domains", "onepassword", "lark", "spotify", "spotify-ip"})
         for name, provider in PROVIDERS.items():
             if name not in inline:
                 self.assertEqual(urlsplit(provider["url"]).hostname, "ruleset.skk.moe")
@@ -196,6 +196,9 @@ class ConfigTests(unittest.TestCase):
             if rule[0] == "IP-CIDR":
                 ipaddress.ip_network(rule[1])
         self.assertEqual(used, set(PROVIDERS))
+        self.assertEqual(RULES[1], ["RULE-SET", "corporate-domains", "DIRECT"])
+        self.assertEqual(PROVIDERS["corporate-domains"]["behavior"], "domain")
+        self.assertEqual(PROVIDERS["corporate-domains"]["payload"], ["+.guorenpcic.com"])
         for name in ["stream", "telegram"]:
             self.assertIn(["RULE-SET", name, "默认代理"], RULES)
         for name, target in [("lark", "Lark"), ("spotify", "Spotify"),
