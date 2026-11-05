@@ -2,7 +2,7 @@
 
 ## 导入与选择节点
 
-使用 [stash.yaml](stash.yaml) 作为主配置，每个机场单独导入一份 [airport.stoverride](airport.stoverride)。在 Stash 的覆写页面，通过各自的开关启用或停用机场。适用于 iOS Stash 3.7.0，包括在 Apple silicon Mac 上运行的 iOS 版。原生 Stash for Mac 需要 4.4 及以上版本。Windows 已在 0.1.47 验证公司内网访问，需要同时完成下方的 Windows 设置。规则预匹配功能在当前官方文档中仍标注为 Beta。
+使用 [stash.yaml](stash.yaml) 作为主配置，每个机场单独导入一份 [airport.stoverride](airport.stoverride)。在 Stash 的覆写页面，通过各自的开关启用或停用机场。适用于 iOS Stash 3.7.0，包括在 Apple silicon Mac 上运行的 iOS 版。原生 Stash for Mac 需要 4.4 及以上版本。Windows 已在 0.1.47 验证公司内网访问，需要同时完成 [Windows 公司 VPN 配置指南](windows-vpn.md)中的设置。规则预匹配功能在当前官方文档中仍标注为 Beta。
 
 1. 下载下方的 `stash.yaml`，在 Stash 的配置页面通过本地文件导入，设为当前主配置。
 2. 下载 `airport.stoverride`。将 `&airport_name` 后面的 `'我的机场'` 改为机场名称，将 `url` 改为完整 HTTPS Clash 订阅地址。保留缩进、两侧单引号，以及 `&airport_name` 和 `*airport_name`。
@@ -115,24 +115,7 @@ Sukka 的 `direct` 集合包含 macOS 下载工具等程序的 `PROCESS-NAME` �
 
 公司域名沿用 [mihomo 覆写](../mihomo/AIsouler.js)中的 `guorenpcic.com`。主配置通过 `corporate-domains` 集合统一管理分流、`nameserver-policy` 和 `fake-ip-filter`：公司域名交给系统 DNS 解析，返回真实 IP，并优先匹配 `DIRECT`。字段用法见 [Stash DNS 文档](https://stash.wiki/features/dns-server)。aTrust 负责建立公司 VPN、提供内网解析能力和业务路由。
 
-在 Stash for Windows 完成以下设置：
-
-1. 在“设置 → 网络 → 绕过列表”保留现有条目，追加 `guorenpcic.com;*.guorenpcic.com`。遵循系统代理设置的应用会直接连接公司地址。
-2. 在“设置 → 隧道 → 排除的网段”添加以下 5 条，让这些地址通过 Windows 路由访问。修改此列表会重载隧道，连接可能短暂中断。
-
-```text
-10.75.0.0/16
-10.100.11.24/32
-10.78.137.33/32
-172.18.20.200/32
-172.31.200.5/32
-```
-
-Windows 0.1.47 的网段排除最多接受 128 条。上述范围覆盖 2026-11-05 本机 aTrust 的全部 157 条业务路由，其中包含 mihomo 清单的 154 条。`10.75.0.0/16` 排除整个 `10.75.*.*` 范围，其余 4 个地址分别排除。实际可访问的资源由 aTrust 的路由与权限决定；公司增加其他地址范围时，需要更新这些排除项。
-
-访问内网时保持 aTrust 已连接，Windows 的“断网保护”保持关闭，让排除的流量能够通过公司 VPN。上述 Windows 选项保存在本机，需要与 YAML 主配置一起设置。显式固定 HTTP / SOCKS 代理且忽略系统绕过列表的应用，需要在应用中将公司域名设置为直连。
-
-本机验证时，公司目标由系统 DNS 返回真实内网地址，Windows 路由选择 `Sangfor aTrust VNIC`（接口名“本地连接”）。使用系统代理自动绕过的 HTTP 请求返回 `200`。Windows 设置与 iOS、macOS 分别管理；其他平台的 VPN 共存方式参考 [Stash 官方说明](https://stash.wiki/faq/conflict-with-vpn)。
+安装新设备或重新安装 Stash 时，按 [Windows 公司 VPN 配置指南](windows-vpn.md)完成系统代理绕过、5 条网段排除和开关设置。指南提供可复制的完整绕过列表、操作位置、验证命令和故障检查方法。这些 Windows 设置保存在本机，需要与 YAML 主配置一起配置。
 
 ## DNS 与接管范围
 
