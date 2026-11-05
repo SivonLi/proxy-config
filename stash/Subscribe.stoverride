@@ -1,0 +1,11 @@
+# 从 Sub-Store 的 Subscribe 集合读取节点。
+proxy-providers:
+  Sub-Store-Subscribe:
+    url: 'http://sub.store/download/collection/Subscribe?target=Stash'
+    interval: 86400
+    benchmark-url: http://www.gstatic.com/generate_204
+    benchmark-timeout: 5
+
+name: 'Sub-Store 订阅'
+desc: '通过此覆写的开关控制 Sub-Store 订阅；分流与 DNS 使用主配置。'
+category: '机场订阅'

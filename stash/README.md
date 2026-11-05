@@ -2,17 +2,17 @@
 
 ## 导入与选择节点
 
-使用 [stash.yaml](stash.yaml) 作为主配置，每个机场单独导入一份 [airport.stoverride](airport.stoverride)。在 Stash 的覆写页面，通过各自的开关启用或停用机场。适用于 iOS Stash 3.7.0，包括在 Apple silicon Mac 上运行的 iOS 版。原生 Stash for Mac 需要 4.4 及以上版本。Windows 已在 0.1.47 验证公司内网访问，需要同时完成 [Windows 公司 VPN 配置指南](windows-vpn.md)中的设置。规则预匹配功能在当前官方文档中仍标注为 Beta。
+使用 [stash.yaml](stash.yaml) 作为主配置，导入 [Subscribe.stoverride](Subscribe.stoverride) 读取 Sub-Store 的 `Subscribe` 集合。在 Stash 的覆写页面，通过“Sub-Store 订阅”开关启用或停用该集合。适用于 iOS Stash 3.7.0，包括在 Apple silicon Mac 上运行的 iOS 版。原生 Stash for Mac 需要 4.4 及以上版本。Windows 已在 0.1.47 验证公司内网访问，需要同时完成 [Windows 公司 VPN 配置指南](windows-vpn.md)中的设置。规则预匹配功能在当前官方文档中仍标注为 Beta。
 
 1. 下载下方的 `stash.yaml`，在 Stash 的配置页面通过本地文件导入，设为当前主配置。
-2. 下载 `airport.stoverride`。将 `&airport_name` 后面的 `'我的机场'` 改为机场名称，将 `url` 改为完整 HTTPS Clash 订阅地址。保留缩进、两侧单引号，以及 `&airport_name` 和 `*airport_name`。
-3. 将填写后的文件保存为 `airport-a.local.stoverride`，在 Stash 的覆写页面通过本地文件导入并启用。第二个机场使用另一份模板，填写不同名称和地址，保存为 `airport-b.local.stoverride` 后导入。继续添加机场时使用同样的方法。
+2. 下载 `Subscribe.stoverride`。显示名称固定为“Sub-Store 订阅”，代理集名称为 `Sub-Store-Subscribe`，订阅地址为 `http://sub.store/download/collection/Subscribe?target=Stash`。使用该地址的设备需要能够访问 Sub-Store 的 `Subscribe` 集合。
+3. 在 Stash 的覆写页面通过本地文件导入 `Subscribe.stoverride`，启用“Sub-Store 订阅”。该开关控制集合内的全部节点。
 4. 停用会修改 DNS、策略组或分流规则的其他覆写。至少启用一个机场，启动 Stash，等待机场节点与规则下载成功。
 5. 在“默认代理”手动选择香港、日本、美国、新加坡、台湾、韩国、欧洲或“其他地区”，初始地区为香港。所选地区需要包含可用节点。
 
 ```text
 https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/stash.yaml
-https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/airport.stoverride
+https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/Subscribe.stoverride
 ```
 
 AI 初始选择新加坡，选项排除香港。Lark 仅提供日本和“默认代理”，初始选择日本。Apple 提供 `DIRECT`、“默认代理”和美国，初始选择 `DIRECT`。Microsoft 仅提供 `DIRECT` 与“默认代理”，初始选择 `DIRECT`。下载仅提供“默认代理”与 `DIRECT`，初始选择“默认代理”。测速初始选择 `DIRECT`，可以手动选择地区。
@@ -27,17 +27,17 @@ DNS、策略组、规则集合、分流规则和图标由主配置管理。每�
 
 机场订阅地址包含凭证，请保存在自己的设备中。工作区的 `.gitignore` 已排除 `stash/*.local.yaml` 和 `stash/*.local.stoverride`。
 
-### 机场名称与开关
+### 订阅名称与开关
 
 机场覆写统一设置 `category: '机场订阅'`，在覆写页面按“机场订阅”分类管理。已导入的本地覆写可以直接在文件顶层添加这一行。
 
-机场名称只填写一次。模板通过 YAML 锚点 `&airport_name` 和别名 `*airport_name`，让代理集名称与覆写页面的显示名称使用同一个值。每份文件中的锚点相互独立，各机场可以使用同一份模板。
+`Subscribe.stoverride` 的显示名称固定为“Sub-Store 订阅”，代理集名称为 `Sub-Store-Subscribe`。显示名称用于覆写页面，代理集名称用于合并节点订阅。Sub-Store 的 `Subscribe` 集合可以包含多个机场的节点，该覆写统一控制整个集合。
 
 每个机场必须使用不同名称。Stash 会递归合并不同覆写中的 `proxy-providers`；同名代理集会合并或覆盖，无法作为两个独立机场管理。机场覆写采用普通字典合并，具体语义见 [覆写文档](https://stash.wiki/configuration/override)。
 
 在覆写页面启用机场后，它的节点参与各地区组的筛选。7 个自动地区组按需测速，“其他地区”保留手动选择。关闭该机场的覆写并应用配置后，它的代理集从当前配置中移除。开关控制整份机场订阅，可以同时启用多个机场。
 
-8 个节点分类均显式包含 `REJECT`，地区过滤保留 `REJECT` 并排除 `DIRECT`。全部机场关闭或某个地区没有匹配节点时，该地区仍有拒绝出口，无法通过空组转换为直连。地区流媒体使用隐藏的 `fallback`，在优先地区不可用时尝试“默认代理”。其他直接引用地区的服务需要保持所选地区有可用节点。每份模板均未指定固定缓存路径，复制模板时无需另行维护缓存文件名。
+8 个节点分类均显式包含 `REJECT`，地区过滤保留 `REJECT` 并排除 `DIRECT`。全部机场关闭或某个地区没有匹配节点时，该地区仍有拒绝出口，无法通过空组转换为直连。地区流媒体使用隐藏的 `fallback`，在优先地区不可用时尝试指定备用地区，具体设置见“地区流媒体”。其他直接引用地区的服务需要保持所选地区有可用节点。每份模板均未指定固定缓存路径，复制模板时无需另行维护缓存文件名。
 
 机场节点协议必须得到 Stash 支持。机场需要专用 DNS 时，该服务器必须支持加密 DNS；必要的 DNS 和 `hosts` 设置可以填写在自己的本地配置中。
 
@@ -92,7 +92,7 @@ pwsh -File stash/icons/build.ps1 -Magick magick
 | AI 与 Apple Intelligence | AI，初始选择新加坡 |
 | Lark 专用服务域名 | Lark，初始选择日本 |
 | Spotify | 通用流媒体规则，使用默认代理 |
-| 美国、欧洲、日本、韩国、香港、台湾流媒体及 Bilibili 国际版 | 优先对应地区，不可用时使用默认代理，见下表 |
+| 美国、欧洲、日本、韩国、香港、台湾流媒体及 Bilibili 国际版 | 优先对应地区，不可用时使用指定备用地区，见下表 |
 | 其他流媒体 | 默认代理 |
 | Telegram | 默认代理 |
 | Apple 中国服务与 Apple CDN | DIRECT |
@@ -126,27 +126,29 @@ Sukka 的 `direct` 集合包含 macOS 下载工具等程序的 `PROCESS-NAME` �
 
 ### 地区流媒体
 
-地区流媒体通过 6 个隐藏的 `fallback` 组选择出口，每组按 `[对应地区, 默认代理]` 的顺序选择可用成员。台湾流媒体和 Bilibili 国际版共用台湾的故障切换组。通用流媒体规则引用“默认代理”，策略页面仍展示 15 个组。地区规则优先于通用流媒体集合，Apple 和 Microsoft 的专用策略继续优先生效。
+地区流媒体通过 6 个隐藏的 `fallback` 组选择出口，每组按 `[优先地区, 备用地区]` 的顺序选择可用成员。日本、美国、欧洲、韩国和台湾使用香港备用，香港使用新加坡备用。台湾流媒体和 Bilibili 国际版共用台湾的故障切换组。
 
-| 流量分类 | Sukka 集合 | 优先地区 | 上游收录示例 |
-| --- | --- | --- | --- |
-| 美国流媒体 | `stream_us` | 美国 | Hulu、Paramount+、Peacock、Tubi |
-| 欧洲流媒体 | `stream_eu` | 欧洲 | BBC、ITV |
-| 日本流媒体 | `stream_jp` | 日本 | Abema、Hulu Japan、TVer、niconico |
-| 韩国流媒体 | `stream_kr` | 韩国 | Naver TV |
-| 香港流媒体 | `stream_hk` | 香港 | myTV SUPER、ViuTV、Now E |
-| 台湾流媒体 | `stream_tw` | 台湾 | 巴哈姆特、KKTV、LiTV |
-| Bilibili 国际版 | `stream_biliintl` | 台湾 | Bilibili 国际版 |
+地区流媒体的备用出口按下表设置，独立于“默认代理”的手动选择。通用流媒体规则引用“默认代理”，策略页面展示 15 个组。地区规则优先于通用流媒体集合，Apple 和 Microsoft 的专用策略继续优先生效。
 
-各地区组包含不可用的 `REJECT` 出口；没有机场节点时，组内仍有成员，流量不会通过空组转换为直连。有可用节点时，地区的 `url-test` 选择低延迟节点；所有节点被判定不可用后，外层 `fallback` 尝试“默认代理”。`fallback` 每 600 秒检查一次，并启用 `lazy: true`；检测到优先地区恢复后，新连接重新优先使用该地区。断线检测与切换存在等待时间，已有连接仍可能需要应用重新建立。
+| 流量分类 | Sukka 集合 | 优先地区 | 备用地区 | 上游收录示例 |
+| --- | --- | --- | --- | --- |
+| 美国流媒体 | `stream_us` | 美国 | 香港 | Hulu、Paramount+、Peacock、Tubi |
+| 欧洲流媒体 | `stream_eu` | 欧洲 | 香港 | BBC、ITV |
+| 日本流媒体 | `stream_jp` | 日本 | 香港 | Abema、Hulu Japan、TVer、niconico |
+| 韩国流媒体 | `stream_kr` | 韩国 | 香港 | Naver TV |
+| 香港流媒体 | `stream_hk` | 香港 | 新加坡 | myTV SUPER、ViuTV、Now E |
+| 台湾流媒体 | `stream_tw` | 台湾 | 香港 | 巴哈姆特、KKTV、LiTV |
+| Bilibili 国际版 | `stream_biliintl` | 台湾 | 香港 | Bilibili 国际版 |
 
-“默认代理”需要选择包含可用节点的地区。如果它也选择当前故障地区，或者全部机场均不可用，故障切换无法恢复访问；这些代理路径会连接失败或拒绝连接，不会增加直连出口。`REJECT` 用于地区组的非空保护，服务分组仍使用各自配置的选项。分组嵌套、故障切换与定时检查依据 [Stash 策略组文档](https://stash.wiki/proxy-protocols/proxy-groups)。
+各地区组包含不可用的 `REJECT` 出口；没有机场节点时，组内仍有成员，流量不会通过空组转换为直连。有可用节点时，地区的 `url-test` 选择低延迟节点；所有节点被判定不可用后，外层 `fallback` 尝试指定备用地区。`fallback` 每 600 秒检查一次，并启用 `lazy: true`；检测到优先地区恢复后，新连接重新优先使用该地区。断线检测与切换存在等待时间，已有连接仍可能需要应用重新建立。
 
-欧洲组按延迟自动选择英国、德国、荷兰等国家的节点。BBC、ITV 等服务可能要求英国出口，欧洲组选择其他国家时不保证播放权限。故障切换只依据节点连通性；切换至默认代理后，出口地区可能变化，播放权限仍取决于账号和节点的解锁能力。
+优先地区和备用地区都需要包含可用节点，才能分别承担首选和备用出口。两个地区全部不可用时，连接失败或被拒绝。`REJECT` 用于地区组的非空保护。分组嵌套、故障切换与定时检查依据 [Stash 策略组文档](https://stash.wiki/proxy-protocols/proxy-groups)。
+
+欧洲组按延迟自动选择英国、德国、荷兰等国家的节点。BBC、ITV 等服务可能要求英国出口，欧洲组选择其他国家时不保证播放权限。故障切换只依据节点连通性；切换至备用地区后，播放权限仍取决于账号和节点的解锁能力。
 
 “其他地区”的节点选择由所有引用它的策略组共用。修改该组的节点，会影响当前选择“其他地区”的全部策略组。节点名称决定归类；没有地区标记的节点也会进入该组，需要核实其真实出口。
 
-Hulu Japan 同时出现在日本与美国集合，日本集合优先。Bilibili 国际版的专用集合优先于香港集合。香港与台湾集合共同收录的 HBO Asia 域名优先使用香港节点组，不可用时使用默认代理。
+Hulu Japan 同时出现在日本与美国集合，日本集合优先。Bilibili 国际版的专用集合优先于香港集合。香港与台湾集合共同收录的 HBO Asia 域名优先使用香港节点组，不可用时使用新加坡。
 
 Netflix、Disney+、YouTube 等通用服务继续使用默认代理。测速集合优先于 Apple 服务集合，以便指定 `networkQuality` 的测速出口；它不包含与 Netflix 共用基础设施的 `fast.com`。地区分流只指定出口，播放权限仍由账号、内容地区和节点的解锁能力决定。
 
@@ -246,9 +248,9 @@ DNS 出口检测网站展示的是递归 DNS 访问权威 DNS 时的出口。出
 
 “默认代理”、服务分组和“其他地区”使用手动选择，通过 `interval: -1` 关闭这些分组自身的定时测速。香港、日本、美国、新加坡、台湾、韩国和欧洲使用 `url-test`，每 600 秒测速，并设置 `lazy: true`，一段时间未使用的地区跳过自身的自动测速。
 
-隐藏的流媒体 `fallback` 组同样使用 600 秒周期和 `lazy: true`。流媒体使用期间，这些组会递归检查对应地区以及“默认代理”引用的节点，用于故障切换和恢复检测。“其他地区”的节点也可能参与该递归检查，手动选择结果保持不变。多个组引用同一节点时共享其测速结果；相关行为见 [延迟测试文档](https://stash.wiki/proxy-protocols/proxy-benchmark)。
+隐藏的流媒体 `fallback` 组使用 600 秒周期和 `lazy: true`。每个辅助组的递归测速范围仅包含优先地区和指定备用地区，用于故障切换和恢复检测。例如，日本流媒体辅助组检查日本和香港，香港流媒体辅助组检查香港和新加坡。其他地区仍可能因 AI、Lark 或其他流量独立触发测速。多个组引用同一节点时共享其测速结果；相关行为见 [延迟测试文档](https://stash.wiki/proxy-protocols/proxy-benchmark)。
 
-地区分组自动选择可用的低延迟节点。`tolerance: 50` 表示新节点比当前节点快超过 50 ms 才会切换；当前节点测速失败时立即切换。机场远程代理集使用 `https://www.gstatic.com/generate_204`，超时为 5 秒。测速结果表示连通性和延迟，不能表示下载带宽或服务解锁能力。具体语义见 [策略组文档](https://stash.wiki/proxy-protocols/proxy-groups)、[延迟测试文档](https://stash.wiki/proxy-protocols/proxy-benchmark)和 [远程代理集文档](https://stash.wiki/proxy-protocols/proxy-providers)。
+地区分组自动选择可用的低延迟节点。`tolerance: 50` 表示新节点比当前节点快超过 50 ms 才会切换；当前节点测速失败时立即切换。机场远程代理集使用 `http://www.gstatic.com/generate_204`，超时为 5 秒。HTTP 测速减少目标服务器一段的 TLS 处理开销，节点协议自身的加密继续生效。测速结果表示 HTTP 连通性和延迟，不能验证目标 HTTPS 的 TLS 连通性、下载带宽或服务解锁能力。具体语义见 [策略组文档](https://stash.wiki/proxy-protocols/proxy-groups)、[延迟测试文档](https://stash.wiki/proxy-protocols/proxy-benchmark)和 [远程代理集文档](https://stash.wiki/proxy-protocols/proxy-providers)。
 
 已启用机场的远程代理集和规则集合每 86400 秒更新一次。规则集合指定本地缓存路径。每种 DNS 用途只配置一个上游，减少重复查询。较大的域名和中国 IP 集合使用 `domain` / `ipcidr` 格式，其余集合保留官方的 `classical` 格式。
 
@@ -270,11 +272,11 @@ python stash/check_config.py --online --proxy http://127.0.0.1:7890
 
 本地配置与上游联网检查最近验证于 2026-11-05：
 
-- 15 项本地检查通过，涵盖主配置与机场模板的 YAML 解析、重复键、分组引用、地区过滤表达式、空组保护、流媒体故障切换结构、内置 DNS 加密、Fake-IP 例外、域名与 IP 规则顺序、流媒体优先级、Sukka 拦截覆盖与公司域名豁免、机场覆写范围和图标集。
-- 8 个节点分类通过 `include-all: true` 汇集节点，7 个地区自动测速，“其他地区”手动选择。主配置的 `proxy-providers` 为空字典。机场模板只定义一个代理集及展示字段，名称通过 YAML 锚点复用，订阅地址为占位值。
+- 16 项本地检查通过，涵盖主配置与机场模板的 YAML 解析、重复键、分组引用、地区过滤表达式、空组保护、流媒体故障切换结构及递归测速范围、内置 DNS 加密、Fake-IP 例外、域名与 IP 规则顺序、流媒体优先级、Sukka 拦截覆盖与公司域名豁免、机场覆写范围和图标集。
+- 8 个节点分类通过 `include-all: true` 汇集节点，7 个地区自动测速，“其他地区”手动选择。主配置的 `proxy-providers` 为空字典。`Subscribe.stoverride` 只定义一个代理集及展示字段，显示名称固定为“Sub-Store 订阅”，订阅地址指向 Sub-Store 的 `Subscribe` 集合，测速使用 HTTP 204 地址。
 - 公共 DNS 上游均为 HTTPS DNS，只有公司域名 policy 使用 `system`。`follow-rule` 关闭，两个 IPv6 解析开关关闭，53 端口提前拦截位于全部分流规则之前。
 - 配置包含 47 个远程集合与 3 个 inline 集合，引用检查通过。远程集合已通过规则类型和 CIDR 格式检查；Sukka `non_ip` 集合中附带的 IP 条目均包含 `no-resolve`，不会自行触发域名解析。
-- 7 条地区流媒体规则引用 6 个隐藏的故障切换组，通用流媒体引用默认代理；主配置包含 15 个展示组，图标集对应这 15 个组。引用检查确认全部目标有效且不存在循环依赖。
+- 7 条地区流媒体规则引用 6 个隐藏的故障切换组，通用流媒体引用默认代理；主配置包含 15 个展示组，图标集对应这 15 个组。引用检查确认全部目标有效且不存在循环依赖。递归检查确认每个辅助组只引用指定的两个基础地区组，两个地区均保留 `REJECT` 保护。
 - 8 个节点分类显式包含 `REJECT`，全部地区过滤均保留 `REJECT` 并排除 `DIRECT`。Windows 0.1.47 的只读 `/proxies` 查询确认内置 `REJECT` 返回 `alive: false`、`state: unhealthy`；本次未加载新配置进行地区断线与恢复演练。
 - “其他地区”的节点过滤与各自动地区组互不重复，订阅提示项从该分类排除。韩国和欧洲流媒体分别引用对应地区组，英国、德国、荷兰等节点统一归入欧洲。
 - 秋风完整规则下载与 YAML 解析通过，Windows 已加载全部 976 条，包含 960 条精确域名、12 条域名后缀和 4 条关键词规则。`ad-api.4pyun.com` 与 `unityads.unity3d.com` 在规则诊断中命中提前拒绝，广告条件明确排除公司域名集合。

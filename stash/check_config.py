@@ -19,7 +19,7 @@ from ruamel.yaml import YAML
 
 ROOT = Path(__file__).resolve().parent
 CONFIG = YAML(typ="safe").load(ROOT / "stash.yaml")
-AIRPORT_TEMPLATE = YAML(typ="safe").load(ROOT / "airport.stoverride")
+AIRPORT_TEMPLATE = YAML(typ="safe").load(ROOT / "Subscribe.stoverride")
 RULES = list(csv.reader(CONFIG["rules"]))
 PROVIDERS = CONFIG["rule-providers"]
 ALI_DOH = "https://223.5.5.5/dns-query"
@@ -47,6 +47,14 @@ STREAM_REGIONS = {
     "stream-biliintl": "台湾",
 }
 STREAM_POLICIES = {provider: f"流媒体-{region}" for provider, region in STREAM_REGIONS.items()}
+STREAM_BACKUPS = {
+    "日本": "香港",
+    "美国": "香港",
+    "欧洲": "香港",
+    "韩国": "香港",
+    "香港": "新加坡",
+    "台湾": "香港",
+}
 
 
 class ConfigTests(unittest.TestCase):
@@ -234,12 +242,30 @@ class ConfigTests(unittest.TestCase):
             with self.subTest(provider=provider):
                 group = groups[STREAM_POLICIES[provider]]
                 self.assertEqual(group["type"], "fallback")
-                self.assertEqual(group["proxies"], [region, "默认代理"])
+                self.assertEqual(group["proxies"], [region, STREAM_BACKUPS[region]])
                 self.assertEqual(group["interval"], 600)
                 self.assertTrue(group["lazy"])
                 self.assertNotIn("include-all", group)
                 self.assertNotIn("filter", group)
                 self.assertNotIn("icon", group)
+
+    def test_streaming_benchmark_scope(self):
+        groups = {item["name"]: item for item in CONFIG["proxy-groups"]}
+        for region, backup in STREAM_BACKUPS.items():
+            with self.subTest(region=region):
+                pending = list(groups[f"流媒体-{region}"]["proxies"])
+                reached = set()
+                while pending:
+                    name = pending.pop()
+                    if name in reached or name not in groups:
+                        continue
+                    reached.add(name)
+                    pending.extend(groups[name].get("proxies", []))
+                self.assertEqual(reached, {region, backup})
+                for name in reached:
+                    self.assertEqual(groups[name]["type"], "url-test")
+                    self.assertEqual(groups[name]["proxies"], ["REJECT"])
+                    self.assertTrue(groups[name]["include-all"])
 
     def test_builtin_dns_encryption(self):
         settings = CONFIG["dns"]
@@ -271,17 +297,15 @@ class ConfigTests(unittest.TestCase):
 
     def test_airport_override_scope(self):
         self.assertEqual(set(AIRPORT_TEMPLATE), {"name", "desc", "category", "proxy-providers"})
-        self.assertEqual(set(AIRPORT_TEMPLATE["proxy-providers"]), {AIRPORT_TEMPLATE["name"]})
-        provider = AIRPORT_TEMPLATE["proxy-providers"][AIRPORT_TEMPLATE["name"]]
-        self.assertEqual(provider["url"], "https://example.invalid/replace-with-your-clash-subscription")
+        self.assertEqual(AIRPORT_TEMPLATE["name"], "Sub-Store 订阅")
+        self.assertEqual(set(AIRPORT_TEMPLATE["proxy-providers"]), {"Sub-Store-Subscribe"})
+        provider = AIRPORT_TEMPLATE["proxy-providers"]["Sub-Store-Subscribe"]
+        self.assertEqual(provider["url"], "http://sub.store/download/collection/Subscribe?target=Stash")
         self.assertEqual(provider["interval"], 86400)
-        self.assertEqual(provider["benchmark-url"], "https://www.gstatic.com/generate_204")
+        self.assertEqual(provider["benchmark-url"], "http://www.gstatic.com/generate_204")
         self.assertEqual(provider["benchmark-timeout"], 5)
         self.assertNotIn("path", provider)
-        template = YAML().load(ROOT / "airport.stoverride")
-        name = next(iter(template["proxy-providers"]))
-        self.assertEqual(name.anchor.value, "airport_name")
-        self.assertIs(template["name"], name)
+        template = YAML().load(ROOT / "Subscribe.stoverride")
         comment = template.ca.items.get("proxy-providers", [None] * 4)[2]
         if comment:
             self.assertNotIn("#!replace", comment.value)
