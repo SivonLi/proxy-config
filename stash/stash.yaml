@@ -112,6 +112,13 @@ proxy-groups:
     lazy: true
 
 rule-providers:
+  # 秋风完整规则包含广告、隐私跟踪与不受欢迎的服务域名。
+  awavenue:
+    behavior: classical
+    format: yaml
+    url: https://raw.githubusercontent.com/TG-Twilight/AWAvenue-Ads-Rule/main/Filters/AWAvenue-Ads-Rule-Clash-Classical.yaml
+    path: ./rules/awavenue.yaml
+    interval: 86400
   corporate-domains:
     type: inline
     behavior: domain
@@ -316,6 +323,8 @@ rules:
   # 全部域名规则先于 IP 规则；命中代理的 TCP 请求交给对应节点解析。
   - RULE-SET,corporate-domains,DIRECT
   - RULE-SET,lan,DIRECT
+  # 提前拒绝完整规则中的目标；公司域名在条件内排除。
+  - AND,((RULE-SET,awavenue),(NOT,((RULE-SET,corporate-domains)))),REJECT,pre-matching
   - RULE-SET,onepassword,DIRECT
   - RULE-SET,lark,Lark
   - RULE-SET,ai,AI

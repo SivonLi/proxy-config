@@ -23,6 +23,8 @@ AIRPORT_TEMPLATE = YAML(typ="safe").load(ROOT / "airport.stoverride")
 RULES = list(csv.reader(CONFIG["rules"]))
 PROVIDERS = CONFIG["rule-providers"]
 ALI_DOH = "https://223.5.5.5/dns-query"
+AD_RULE = "AND,((RULE-SET,awavenue),(NOT,((RULE-SET,corporate-domains)))),REJECT,pre-matching"
+AD_RULE_FIELDS = next(csv.reader([AD_RULE]))
 
 
 class ConfigTests(unittest.TestCase):
@@ -94,7 +96,7 @@ class ConfigTests(unittest.TestCase):
                     self.assertFalse(ip_phase, rule)
             elif rule[0] in {"IP-CIDR", "IP-CIDR6", "IP-ASN", "GEOIP"}:
                 ip_phase = True
-            elif rule[0].startswith("DOMAIN"):
+            elif rule[0].startswith("DOMAIN") or rule[0] == "AND":
                 self.assertFalse(ip_phase, rule)
         self.assertTrue(ip_phase)
 
@@ -102,9 +104,17 @@ class ConfigTests(unittest.TestCase):
         inline = {name for name, provider in PROVIDERS.items() if provider.get("type") == "inline"}
         self.assertEqual(inline, {"corporate-domains", "onepassword", "lark", "spotify", "spotify-ip"})
         for name, provider in PROVIDERS.items():
-            if name not in inline:
+            if name == "awavenue":
+                self.assertEqual(provider["url"], "https://raw.githubusercontent.com/TG-Twilight/"
+                                 "AWAvenue-Ads-Rule/main/Filters/AWAvenue-Ads-Rule-Clash-Classical.yaml")
+                self.assertEqual(provider["behavior"], "classical")
+                self.assertEqual(provider["format"], "yaml")
+                self.assertEqual(provider["interval"], 86400)
+            elif name not in inline:
                 self.assertEqual(urlsplit(provider["url"]).hostname, "ruleset.skk.moe")
                 self.assertEqual(provider["format"], "text")
+        paths = [provider["path"] for name, provider in PROVIDERS.items() if name not in inline]
+        self.assertEqual(len(paths), len(set(paths)))
         self.assertFalse({"DOMAIN", "DOMAIN-SUFFIX", "DOMAIN-WILDCARD"} & {rule[0] for rule in RULES})
 
     def test_group_choices(self):
@@ -147,7 +157,7 @@ class ConfigTests(unittest.TestCase):
         self.assertFalse(settings["follow-rule"])
         self.assertNotIn("fallback", settings)
         self.assertEqual(RULES[0], ["DST-PORT", "53", "REJECT", "pre-matching"])
-        self.assertEqual([rule for rule in RULES if "pre-matching" in rule], [RULES[0]])
+        self.assertEqual([rule for rule in RULES if "pre-matching" in rule], [RULES[0], AD_RULE_FIELDS])
         endpoints = []
         for field in ["nameserver", "default-nameserver", "proxy-server-nameserver"]:
             self.assertEqual(len(settings[field]), 1)
@@ -188,6 +198,10 @@ class ConfigTests(unittest.TestCase):
         groups = {item["name"] for item in CONFIG["proxy-groups"]}
         used = set()
         for rule in RULES:
+            if rule[0] == "AND":
+                self.assertEqual(rule, AD_RULE_FIELDS)
+                used.update({"awavenue", "corporate-domains"})
+                continue
             self.assertIn(rule[0], {"RULE-SET", "IP-CIDR", "DST-PORT", "DOMAIN-KEYWORD", "MATCH"})
             self.assertIn(rule[1] if rule[0] == "MATCH" else rule[2], groups | {"DIRECT", "REJECT"})
             if rule[0] == "RULE-SET":
@@ -199,6 +213,7 @@ class ConfigTests(unittest.TestCase):
         self.assertEqual(RULES[1], ["RULE-SET", "corporate-domains", "DIRECT"])
         self.assertEqual(PROVIDERS["corporate-domains"]["behavior"], "domain")
         self.assertEqual(PROVIDERS["corporate-domains"]["payload"], ["+.guorenpcic.com"])
+        self.assertLess(RULES.index(AD_RULE_FIELDS), RULES.index(["RULE-SET", "onepassword", "DIRECT"]))
         for name in ["stream", "telegram"]:
             self.assertIn(["RULE-SET", name, "默认代理"], RULES)
         for name, target in [("lark", "Lark"), ("spotify", "Spotify"),
@@ -222,9 +237,14 @@ def fetch_provider(item, proxies):
         session.trust_env = False
         response = session.get(provider["url"], timeout=45, proxies=proxies)
         response.raise_for_status()
-        assert "EOF" in response.text, name
-        entries = [line.strip() for line in response.text.splitlines() if line.strip() and not line.startswith("#")]
-    assert entries, name
+        if provider["format"] == "yaml":
+            entries = YAML(typ="safe").load(response.text)["payload"]
+        else:
+            assert provider["format"] == "text", name
+            assert "EOF" in response.text, name
+            entries = [line.strip() for line in response.text.splitlines() if line.strip() and not line.startswith("#")]
+    assert isinstance(entries, list) and entries, name
+    assert all(isinstance(entry, str) and entry for entry in entries), name
     if provider["behavior"] == "ipcidr":
         for entry in entries:
             ipaddress.ip_network(entry)
@@ -235,6 +255,8 @@ def fetch_provider(item, proxies):
         rows = list(csv.reader(entries))
         types = {row[0] for row in rows}
         assert types <= allowed, name
+        if name == "awavenue":
+            assert types <= {"DOMAIN", "DOMAIN-SUFFIX", "DOMAIN-KEYWORD", "DOMAIN-WILDCARD"}, name
         if "/Clash/non_ip/" in urlsplit(provider["url"]).path:
             assert all(row[0] not in {"IP-CIDR", "IP-CIDR6", "IP-ASN"}
                        or "no-resolve" in row[2:] for row in rows), name
@@ -273,6 +295,7 @@ def check_online(proxy):
         if domain in required_domains:
             assert all(any(address in network for network in networks) for address in addresses), domain
     print(json.dumps({"providers": len(entries), "records": sum(map(len, entries.values())),
+                      "awavenue_records": len(entries["awavenue"]),
                       "dns": [{"domain": domain, "addresses": [str(address) for address in addresses],
                                "china_addresses": sum(any(address in network for network in networks) for address in addresses)}
                               for domain, addresses in answers]}, ensure_ascii=False, indent=2))

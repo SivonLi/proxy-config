@@ -78,6 +78,7 @@ pwsh -File stash/icons/build.ps1 -Magick magick
 | 流量 | 默认出口 |
 | --- | --- |
 | `guorenpcic.com` 及其子域名 | DIRECT；Windows 配合系统代理绕过与 aTrust 路由 |
+| 秋风完整规则中的目标，公司域名除外 | REJECT，提前拦截 |
 | 局域网域名与私有地址 | DIRECT |
 | 1Password 专用服务、更新与附件 | DIRECT |
 | AI 与 Apple Intelligence | AI，初始选择美国 |
@@ -110,6 +111,18 @@ Spotify 的 17 个域名、1 个关键词和 1 个 IP 条目来自 [Sukka 的 Sp
 Apple 的 `icloud.com`、`icloud-content.com` 和推送服务使用 Apple 分组，初始选择 `DIRECT`。更新配置后，需要在策略页面确认 Apple 的当前选择；已保存的选择可能继续生效。
 
 Sukka 的 `direct` 集合包含 macOS 下载工具等程序的 `PROCESS-NAME` 条目。连接匹配到这些条目时会直连，iOS 忽略进程条目。
+
+## 去广告
+
+主配置通过 `awavenue` 规则集合订阅 [AWAvenue 秋风完整规则](https://github.com/TG-Twilight/AWAvenue-Ads-Rule)。使用官方的 `AWAvenue-Ads-Rule-Clash-Classical.yaml`，保留精确域名、域名后缀和关键词条目。规则每 86400 秒更新一次，并保存本地缓存。
+
+完整规则包含广告、隐私跟踪和“不受欢迎”三类，后者涉及部分推送、强制更新、云控与 PCDN 服务。命中的请求会被拒绝，因此相关应用的通知、更新或其他功能可能受到影响。拦截范围随上游更新；该配置无需为去广告启用 HTTPS 解密或脚本。
+
+拦截规则使用 `REJECT,pre-matching`。在能够匹配域名的 DNS 阶段返回空应答；其他符合条件的连接在入口阶段提前拒绝，减少连接处理。使用条件与匹配阶段见 [Stash 规则类型文档](https://stash.wiki/rules/rule-types)。
+
+广告条件明确排除 `corporate-domains`，公司域名继续使用系统 DNS 和 `DIRECT`。提前拦截独立于普通规则顺序：其他 `DIRECT` 规则不能放行已被提前拦截的目标。DNS 的 53 端口限制仍按原有范围生效。
+
+在“远程资源”查看 `awavenue` 的更新时间，确认规则已加载。提前拒绝的请求不进入连接列表，可通过核心日志中的 `pre-matched` 记录，或 [HTTP API](https://stash.wiki/features/http-api) 的 `/rules/match` 查询目标、命中规则和 `stage`。排查功能异常时需要记录实际请求域名和命中结果。
 
 ## 公司 VPN（Windows）
 
@@ -183,12 +196,13 @@ python stash/check_config.py --online --proxy http://127.0.0.1:7890
 
 `--proxy` 仅用于下载公开规则，DoH 检查不指定 HTTP 代理。代理端口按本机配置填写。联网检查会访问真实公开服务；解析结果变化时，脚本直接报告失败。
 
-本地配置和 Windows 内网访问最近验证于 2026-11-05，上游联网检查记录为 2026-11-04：
+本地配置与上游联网检查最近验证于 2026-11-05：
 
 - 11 项本地检查通过，涵盖主配置与机场模板的 YAML 解析、重复键、分组引用、地区过滤表达式、内置 DNS 加密、Fake-IP 例外、域名与 IP 规则顺序、机场覆写范围和图标集。
 - 5 个地区组均通过 `include-all: true` 汇集节点，主配置的 `proxy-providers` 为空字典。机场模板只定义一个代理集及展示字段，名称通过 YAML 锚点复用，订阅地址为占位值。
 - 公共 DNS 上游均为 HTTPS DNS，只有公司域名 policy 使用 `system`。`follow-rule` 关闭，两个 IPv6 解析开关关闭，53 端口提前拦截位于全部分流规则之前。
-- 配置包含 23 个远程集合与 5 个 inline 集合，引用检查通过。远程集合已通过规则类型和 CIDR 格式检查；`non_ip` 集合中附带的 IP 条目均包含 `no-resolve`，不会自行触发域名解析。
+- 配置包含 24 个远程集合与 5 个 inline 集合，引用检查通过。远程集合已通过规则类型和 CIDR 格式检查；Sukka `non_ip` 集合中附带的 IP 条目均包含 `no-resolve`，不会自行触发域名解析。
+- 秋风完整规则下载与 YAML 解析通过，Windows 已加载全部 976 条，包含 960 条精确域名、12 条域名后缀和 4 条关键词规则。`ad-api.4pyun.com` 与 `unityads.unity3d.com` 在规则诊断中命中提前拒绝，广告条件明确排除公司域名集合。
 - Windows 0.1.47 已加载主配置。公司域名命中 `corporate-domains`，Stash DNS API 确认解析来源为 `system`。系统代理绕过设置已保存生效，5 条隧道网段排除覆盖当前 157 条业务路由，内网 HTTP 请求返回 `200`。
 - 1Password 的 11 个域名条目使用 `domain` 集合，直连规则优先于下载和通用境外服务规则。
 - 山姆的 `api-sams.walmartmobile.cn`、`decoration-sams.walmartmobile.cn` 通过国内 DoH 返回 `157.148.16.212`，属于 Sukka 中国 IP 集合。
