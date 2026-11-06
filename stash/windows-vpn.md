@@ -1,40 +1,64 @@
-# Windows 公司 VPN 配置指南
+# Windows 公司内网配置指南
 
-## 适用范围
+## 连接方式
 
-适用于本仓库的 [stash.yaml](stash.yaml)、Stash for Windows 和公司 aTrust VPN。文档按 Stash 0.1.47 编写，设置核对日期为 2026-11-05。
+适用于本仓库的 [stash.yaml](stash.yaml)、[aTrust.stoverride](aTrust.stoverride) 和 Windows 版 zju-connect。Stash 接管应用请求，公司域名和指定网段通过本机 SOCKS5 节点进入 zju-connect，再访问公司网关允许的资源。公网请求继续使用主配置的分流规则。
 
-主配置已为 `guorenpcic.com` 及其子域名设置系统 DNS、真实 IP 和优先直连。Windows 的系统代理绕过、隧道网段排除和断网保护另行保存在设备中。**重新安装 Stash 或更换电脑后，需要重新完成下列设置。**
+2026-11-06 已在 Stash for Windows 0.1.47 和 zju-connect v1.3.1 验证公司 CODING 站点。公司网关使用 `auth/psw` 账号密码认证，登录域为 `local`。覆写文件不保存 VPN 账号、密码或会话数据。
 
-## 连接公司 VPN
+## 启动 zju-connect
 
-1. 安装并登录 aTrust，连接公司 VPN。
-2. 确认仅连接 aTrust 时，浏览器可以打开平时使用的公司内网网站。
-3. 按 [主配置导入说明](README.md#导入与选择节点)导入 `stash.yaml` 和机场覆写，启动 Stash。
+下载 [zju-connect v1.3.1 Windows amd64](https://github.com/Mythologyli/zju-connect/releases/tag/v1.3.1)，解压后在程序目录打开 PowerShell。以下命令通过系统凭据窗口读取账号密码，密码仅传入本次进程。
 
-aTrust 负责公司登录、内网解析和业务路由。以下设置沿用 aTrust 已提供的访问权限。
-
-## 设置系统代理绕过
-
-打开“设置 → 网络”，开启“设为系统代理”。在“绕过列表”中保留现有内容，用英文分号追加以下两项：
-
-```text
-guorenpcic.com;*.guorenpcic.com
+```powershell
+$credential = Get-Credential -Message '输入公司 VPN 账号和密码'
+$env:ZJU_CONNECT_USERNAME = $credential.UserName
+$env:ZJU_CONNECT_PASSWORD = $credential.GetNetworkCredential().Password
+try {
+    .\zju-connect.exe -protocol atrust -server vpn.guorenpcic.com -port 443 `
+        -auth-type auth/psw -login-domain local `
+        -socks-bind 127.0.0.1:11080 -http-bind 127.0.0.1:11081 `
+        -tun-mode=false -add-route=false -dns-hijack=false -fake-ip=false `
+        -bind-interface WLAN -local-dns-server 223.5.5.5 `
+        -update-best-nodes-interval 0 `
+        -keep-alive-url http://codingcorp.devops.guorenpcic.com/
+} finally {
+    Remove-Item Env:ZJU_CONNECT_USERNAME, Env:ZJU_CONNECT_PASSWORD
+    $credential = $null
+}
 ```
 
-第一项匹配公司根域名，第二项匹配其子域名。已有条目末尾没有分号时，追加前补充一个分号。
+`WLAN` 是本机的物理网络接口名称。使用有线网络或其他电脑时，通过 `Get-NetAdapter` 查询实际接口名称并替换。绑定物理网络接口，让 zju-connect 的网关连接直接出站。`local-dns-server` 用于解析 VPN 网关，业务域名由 zju-connect 按网关下发的资源配置处理。
 
-输入框为空时，Stash 使用界面提示的默认列表。填写自定义内容后，需要把默认条目一起保留。本机当前的完整列表如下，可整行复制；其他自定义绕过条目也应继续保留：
+公司网关没有下发 DNS，zju-connect 的默认 DNS 保活不会启用。启动命令使用公司 HTTP 站点保活。保持程序运行并保持账号会话有效；此命令没有设置开机自启。
+
+代理只监听 `127.0.0.1`。当前覆写使用 SOCKS5 的 TCP 转发，并关闭节点测速与 UDP。公司网关仍决定每项资源可访问的地址、端口和账号权限。
+
+## 导入并启用覆写
+
+1. 导入本仓库的 `stash.yaml`，设为当前配置。
+2. 在“覆写”页面导入 `aTrust.stoverride`，启用“aTrust 公司内网”。
+3. 保留机场订阅覆写，将公司内网覆写放在会修改 DNS 或分流规则的其他覆写之后。
+4. 开启 Stash 的增强模式和“设为系统代理”。
+
+覆写添加名为 `aTrust` 的 SOCKS5 节点，地址为 `127.0.0.1:11080`。规则默认插入主配置之前，zju-connect 进程和 `vpn.guorenpcic.com` 网关直连，公司业务使用该节点。主配置中的地区过滤排除 `aTrust`，该节点不参与机场选择。
+
+DNS 覆写清空主配置的 `nameserver-policy`，并用 `#!replace` 将真实地址例外设为 `rule-set:lan` 和 `rule-set:fake-ip-exclude`。公司业务域名由 Stash 返回 Fake-IP，TCP 请求携带原始域名进入 SOCKS5。其他 DNS 上游保持主配置的设置。自行添加其他 DNS policy 时，需要一并维护这份覆写的替换列表。
+
+停用覆写会移除它添加的节点、规则和 DNS 修改。Windows 的系统代理绕过与隧道排除单独保存，不随覆写开关恢复。
+
+## 设置 Windows 接管范围
+
+打开“设置 → 网络 → 绕过列表”，删除以下两项，保留其他内容：
 
 ```text
-localhost;127.*;10.*;172.16.*;172.17.*;172.18.*;172.19.*;172.20.*;172.21.*;172.22.*;172.23.*;172.24.*;172.25.*;172.26.*;172.27.*;172.28.*;172.29.*;172.30.*;172.31.*;192.168.*;<local>;guorenpcic.com;*.guorenpcic.com
+guorenpcic.com
+*.guorenpcic.com
 ```
 
-遵循 Windows 系统代理设置的应用会直接连接这些地址。应用单独指定了 HTTP / SOCKS 代理时，还需在该应用中为公司域名设置直连。
+在 Windows“环境变量”的用户变量中检查 `NO_PROXY`，移除 `guorenpcic.com`、`.guorenpcic.com` 或 `*.guorenpcic.com` 公司域名条目，保留其他内容。该修改对新启动的应用生效，已经运行的应用可能继续使用启动时读取的值；增强模式仍需接管这些应用的连接。
 
-## 设置隧道排除网段
-
-打开“设置 → 隧道 → 排除的网段”，每次输入一条并点击“添加”，共添加以下 5 条：
+打开“设置 → 隧道 → 排除的网段”，移除以下 5 条公司地址范围，保留其他用途的排除项：
 
 ```text
 10.75.0.0/16
@@ -44,70 +68,51 @@ localhost;127.*;10.*;172.16.*;172.17.*;172.18.*;172.19.*;172.20.*;172.21.*;172.2
 172.31.200.5/32
 ```
 
-修改列表会重载隧道，连接可能短暂中断。完成后确认列表中包含全部 5 条，保留设备原有的其他排除项。
+这 5 条范围已加入覆写的 `IP-CIDR` 规则。它们用于选择内网节点，资源访问权限仍由公司网关控制。其他私有地址继续按主配置直连。
 
-这些地址通过 Windows 路由访问，由 aTrust 接管对应的公司业务流量。`DIRECT` 分流规则本身无法代替这项设置。
-
-`10.75.0.0/16` 排除整个 `10.75.*.*` 范围，其余 4 条各排除一个地址。2026-11-05 本机验证时，这些范围覆盖了 aTrust 的 157 条业务路由。该版本最多接受 128 条排除项，因此采用上述 5 条范围。
-
-这里排除的是指定地址范围，实际可访问的资源由 aTrust 路由和权限决定。公司新增其他网段时，应按新的业务路由补充排除项。
-
-## 保持运行开关
-
-| 位置 | 设置 |
-| --- | --- |
-| aTrust | 保持公司 VPN 已连接 |
-| Stash 仪表盘 | 保持 Stash 运行，开启增强模式 |
-| 设置 → 网络 | “设为系统代理”开启 |
-| 设置 → 隧道 | “断网保护”关闭，允许排除的流量通过公司 VPN |
-
-完成设置后，重新打开公司网页。仍在复用旧连接的应用需要退出后重新打开。
+修改隧道排除会重载隧道，已有连接可能短暂中断。修改后重新打开公司网页。系统代理的通用私有地址绕过可以保留，直接访问公司 IP 的流量仍需增强模式接管。
 
 ## 验证访问
 
-保持 aTrust 和 Stash 同时运行，用平时使用的浏览器打开公司内网网站。应能显示网站页面或公司登录页面。通过系统代理绕过、隧道排除的连接可能不会出现在 Stash 请求列表中。
-
-需要检查解析和路由时，在 PowerShell 执行以下命令，输入实际公司内网域名：
+在 PowerShell 运行：
 
 ```powershell
-$corpHost = Read-Host '输入公司内网域名，不含协议和路径'
-$corpAddress = [System.Net.Dns]::GetHostAddresses($corpHost) |
-    Where-Object AddressFamily -eq InterNetwork |
-    Select-Object -First 1 -ExpandProperty IPAddressToString
-$corpAddress
-Find-NetRoute -RemoteIPAddress $corpAddress |
-    Format-List InterfaceAlias, IPAddress, DestinationPrefix, NextHop
-Test-NetConnection -ComputerName $corpAddress -Port 80 -InformationLevel Detailed |
-    Format-List RemoteAddress, RemotePort, InterfaceAlias, SourceAddress, TcpTestSucceeded
+Resolve-DnsName codingcorp.devops.guorenpcic.com -Type A
+curl.exe --noproxy "" --proxy socks5h://127.0.0.1:11080 --max-time 15 `
+    --output NUL --write-out "SOCKS5 HTTP=%{http_code}\n" `
+    http://codingcorp.devops.guorenpcic.com/
+curl.exe --noproxy "" --proxy http://127.0.0.1:7890 --max-time 15 `
+    --output NUL --write-out "Stash HTTP=%{http_code}\n" `
+    http://codingcorp.devops.guorenpcic.com/
 ```
 
-HTTP 网站通常使用 80 端口，HTTPS 网站通常使用 443 端口，其他服务填写实际端口。检查结果应满足以下条件：
+代理端口按实际设置填写。检查结果应满足：
 
-- DNS 返回公司业务的真实地址。当前已验证的业务地址位于 `10.75.*.*`。
-- 路由出口属于 aTrust 网卡。本机名称为“本地连接”，描述为 `Sangfor aTrust VNIC`；其他电脑以实际名称为准。
-- `TcpTestSucceeded` 为 `True`，说明目标地址的指定端口可连接。浏览器还需能打开页面，端口连通不代表账号已获得业务权限。
+- 公司域名返回 Stash 的 Fake-IP，通常位于 `198.18.0.0/15`。
+- SOCKS5 和 Stash 两条路径均返回 HTTP 200。
+- Stash 请求列表显示公司站点命中 `corporate-domains`，出口为 `aTrust`。
+- 公司 IP 命中覆写的对应 `IP-CIDR`，VPN 网关命中 `DIRECT`。
+- “其他地区”和各地区组均不包含 `aTrust`。
 
-PowerShell 的端口检查使用系统路由；浏览器访问同时检查应用是否正确采用系统代理绕过。
+2026-11-06 本机验证时，公司 CODING 域名返回 `198.18.16.50`；通过 Stash 收到 37,767 字节页面。请求列表确认出口为 `aTrust`，zju-connect 确认真实业务目标为 `10.75.11.237:80`。通过系统 DNS 和增强模式访问同样返回 HTTP 200。其他公司网段已验证规则匹配，尚未逐项验证业务服务。
+
+官方 aTrust 服务已停止，安装目录下的进程全部退出，虚拟网卡状态为断开。该状态下 6 项真实访问检查通过：公司站点经 Stash HTTP 代理、系统增强模式和 zju-connect HTTP 代理均返回 HTTP 200；公司真实 IP 经增强模式返回 HTTP 200；Apple HTTPS 直连返回 HTTP 200；Google HTTPS 经原有香港节点返回 HTTP 204。公司连接记录确认出口为 `aTrust`，验证的公司站点访问不依赖官方客户端运行。
 
 ## 无法访问时检查
 
 | 现象 | 检查内容 |
 | --- | --- |
-| 仅连接 aTrust 也无法访问 | 检查 aTrust 登录、公司权限和业务服务状态 |
-| 无法解析公司域名 | 检查 aTrust 连接，以及主配置的 `nameserver-policy` 是否仍使用 `system` |
-| 公司域名返回 Fake-IP | 检查主配置的 `fake-ip-filter` 是否包含 `rule-set:corporate-domains`，其他覆写是否改动 DNS |
-| 路由出口没有使用 aTrust | 检查目标 IP 是否包含在排除网段中，以及 aTrust 是否提供对应路由 |
-| 浏览器成功，某个应用失败 | 检查应用自己的代理和 DNS 设置，将公司域名设置为直连并使用系统解析 |
-| 公司新增服务无法访问 | 获取目标真实 IP，核对 aTrust 业务路由与 Stash 排除范围 |
+| `127.0.0.1:11080` 无法连接 | 检查 zju-connect 进程、登录结果和监听地址 |
+| SOCKS5 访问失败 | 检查公司会话、资源权限、业务服务端口和 zju-connect 日志 |
+| SOCKS5 成功，Stash 失败 | 检查覆写是否启用、节点端口与实际连接出口 |
+| 公司域名没有返回 Fake-IP | 检查覆写 DNS 是否应用，以及应用是否使用自定义 DNS |
+| 公司请求未进入 Stash | 检查增强模式、公司域名绕过和公司网段排除 |
+| zju-connect 日志出现循环连接 | 检查物理接口绑定，以及进程和网关直连规则 |
+| 一段时间后无法访问 | 检查账号会话、HTTP 保活与网关返回的错误 |
+| 新增公司服务无法访问 | 核对域名、实际地址及网关权限，按需补充公司规则 |
 
-## 设置保存位置
+## 其他设备
 
-以下路径用于核对本机设置，日常通过 Stash 界面修改：
+`127.0.0.1` 指向运行 Stash 的那台设备。macOS 需要在本机运行 zju-connect，或填写可访问的服务地址。iOS 使用此覆写时，也需要可访问的 zju-connect 服务地址。当前服务仅监听 Windows 本机，其他设备无法直接使用。
 
-| 文件 | 对应内容 |
-| --- | --- |
-| `%APPDATA%\ws.stash.windows\preferences.json` | `systemProxyBypass`：系统代理绕过列表 |
-| `C:\ProgramData\Stash\split-tunnel.json` | `subnets`：排除的网段 |
-| `C:\ProgramData\Stash\settings.json` | `killSwitch`：断网保护开关，本方案为 `false` |
-
-上述 Windows 设置需要在每台电脑分别配置。`stash.yaml` 可以继续与 iOS、原生 Stash for Mac 共用。DNS 字段见 [Stash DNS 文档](https://stash.wiki/features/dns-server)，其他平台的公司 VPN 共存方式见 [官方说明](https://stash.wiki/faq/conflict-with-vpn)。
+覆写合并、SOCKS5 与 DNS 字段见 [Stash 覆写文档](https://stash.wiki/configuration/override)、[协议文档](https://stash.wiki/proxy-protocols/proxy-types)和 [DNS 文档](https://stash.wiki/features/dns-server)。

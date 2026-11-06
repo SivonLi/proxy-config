@@ -1,0 +1,31 @@
+name: 'aTrust 公司内网'
+desc: '公司请求经本机 zju-connect 转发；使用前需登录 zju-connect，并让 Stash 接管公司域名和网段。'
+category: '公司网络'
+
+proxies:
+  - name: aTrust
+    type: socks5
+    server: 127.0.0.1
+    port: 11080
+    udp: false
+    benchmark-disabled: true
+
+dns:
+  # 公司 TCP 请求携带域名交给 zju-connect，不依赖系统 DNS。
+  nameserver-policy: #!replace
+    {}
+  fake-ip-filter: #!replace
+    - 'rule-set:lan'
+    - 'rule-set:fake-ip-exclude'
+
+# 覆写规则默认插入主配置之前。
+rules:
+  - PROCESS-NAME,zju-connect.exe,DIRECT
+  - PROCESS-NAME,zju-connect,DIRECT
+  - DOMAIN,vpn.guorenpcic.com,DIRECT
+  - RULE-SET,corporate-domains,aTrust
+  - IP-CIDR,10.75.0.0/16,aTrust,no-resolve
+  - IP-CIDR,10.100.11.24/32,aTrust,no-resolve
+  - IP-CIDR,10.78.137.33/32,aTrust,no-resolve
+  - IP-CIDR,172.18.20.200/32,aTrust,no-resolve
+  - IP-CIDR,172.31.200.5/32,aTrust,no-resolve

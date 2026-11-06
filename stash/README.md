@@ -7,7 +7,7 @@
 1. 下载下方的 `stash.yaml`，在 Stash 的配置页面通过本地文件导入，设为当前主配置。
 2. 下载 `Subscribe.stoverride`。显示名称固定为“Sub-Store 订阅”，代理集名称为 `Sub-Store-Subscribe`，订阅地址为 `http://sub.store/download/collection/Subscribe?target=Stash`。使用该地址的设备需要能够访问 Sub-Store 的 `Subscribe` 集合。
 3. 在 Stash 的覆写页面通过本地文件导入 `Subscribe.stoverride`，启用“Sub-Store 订阅”。该开关控制集合内的全部节点。
-4. 停用会修改 DNS、策略组或分流规则的其他覆写。至少启用一个机场，启动 Stash，等待机场节点与规则下载成功。
+4. 停用与主配置冲突的 DNS、策略组或分流覆写。公司内网按下方说明启用 `aTrust.stoverride`。至少启用一个机场，启动 Stash，等待机场节点与规则下载成功。
 5. 在“默认代理”手动选择香港、日本、美国、新加坡、台湾、韩国、欧洲或“其他地区”，初始地区为香港。所选地区需要包含可用节点。
 
 ```text
@@ -17,11 +17,11 @@ https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/Subscribe.s
 
 AI 初始选择新加坡，选项排除香港。Lark 仅提供日本和“默认代理”，初始选择日本。Apple 提供 `DIRECT`、“默认代理”和美国，初始选择 `DIRECT`。Microsoft 仅提供 `DIRECT` 与“默认代理”，初始选择 `DIRECT`。下载仅提供“默认代理”与 `DIRECT`，初始选择“默认代理”。测速初始选择 `DIRECT`，可以手动选择地区。
 
-香港、日本、美国、新加坡、台湾、韩国和欧洲根据测速结果自动选择节点。欧洲包含英国、德国、荷兰等节点。“其他地区”使用 `select`，由你手动指定节点，通过 `interval: -1` 关闭该组自身的定时测速。它收纳上述地区以外的节点，过滤流量余额、套餐到期和重置时间等订阅提示项。首次使用“其他地区”时，需要手动选择机场节点；初始的 `REJECT` 用于空组保护。
+香港、日本、美国、新加坡、台湾、韩国和欧洲根据测速结果自动选择节点。欧洲包含英国、德国、荷兰等节点。“其他地区”使用 `select`，由你手动指定节点，通过 `interval: -1` 关闭该组自身的定时测速。它收纳上述地区以外的节点，过滤流量余额、套餐到期和重置时间等订阅提示项，并排除独立的 `aTrust` 内网节点。首次使用“其他地区”时，需要手动选择机场节点；初始的 `REJECT` 用于空组保护。
 
 各机场的远程代理集从 Clash 订阅中读取 `proxies` 节点列表。8 个节点分类通过 `include-all: true` 汇集节点，再按名称过滤。增加机场或修改机场名称时，只需编辑对应的机场覆写。字段用法见 [Stash 远程代理集文档](https://stash.wiki/proxy-protocols/proxy-providers)和 [策略组文档](https://stash.wiki/proxy-protocols/proxy-groups)。
 
-DNS、策略组、规则集合、分流规则和图标由主配置管理。每份机场覆写只添加一个远程代理集，以及供覆写页面显示的名称、说明和分类。机场订阅中的其他顶层配置不会参与分流，节点内部的协议和连接参数仍由机场提供。
+DNS、策略组、规则集合、分流规则和图标由主配置管理。每份机场覆写只添加一个远程代理集，以及供覆写页面显示的名称、说明和分类。机场订阅中的其他顶层配置不会参与分流，节点内部的协议和连接参数仍由机场提供。可选的 [aTrust.stoverride](aTrust.stoverride) 单独管理公司内网节点、公司规则和对应 DNS 调整。
 
 更新主配置时，下载新的 `stash.yaml` 并重新通过本地文件导入，保留设备上的机场覆写。机场订阅地址保存在各自的本地覆写中，节点和规则集合按配置中的周期独立更新。
 
@@ -83,7 +83,7 @@ pwsh -File stash/icons/build.ps1 -Magick magick
 
 | 流量 | 默认出口 |
 | --- | --- |
-| `guorenpcic.com` 及其子域名 | DIRECT；Windows 配合系统代理绕过与 aTrust 路由 |
+| `guorenpcic.com` 及其子域名 | 主配置为 DIRECT；启用公司内网覆写后，业务请求使用 aTrust 节点，VPN 网关直连 |
 | Sukka 与秋风拦截域名，公司域名除外 | REJECT / REJECT-DROP，提前拦截 |
 | 搜狗输入法上报域名与进程 | REJECT，普通匹配 |
 | Sukka 恶意 IP 与 DNS 劫持地址，私有地址除外 | REJECT-DROP，在 IP 阶段匹配 |
@@ -190,17 +190,19 @@ Netflix、Disney+、YouTube 等通用服务继续使用默认代理。测速集�
 
 域名拦截使用 `pre-matching`。在能够匹配域名的 DNS 阶段返回空应答；其他符合条件的连接在入口阶段提前拒绝，减少连接处理。`reject-drop` 优先于其他拦截集合，使用 `REJECT-DROP` 静默丢弃连接。使用条件与匹配阶段见 [Stash 规则类型文档](https://stash.wiki/rules/rule-types)。
 
-搜狗输入法集合含 `PROCESS-NAME`，采用普通匹配；iOS 忽略进程条目。`reject-ip` 在全部域名规则和局域网 IP 直连规则之后执行，通过 `no-resolve` 复用已经获取的地址。公司域名和私有地址继续优先直连。
+搜狗输入法集合含 `PROCESS-NAME`，采用普通匹配；iOS 忽略进程条目。`reject-ip` 在全部域名规则和局域网 IP 直连规则之后执行，通过 `no-resolve` 复用已经获取的地址。主配置优先直连公司域名和私有地址；启用公司内网覆写后，公司业务由覆写优先处理。
 
-广告条件明确排除 `corporate-domains`，公司域名继续使用系统 DNS 和 `DIRECT`。提前拦截独立于普通规则顺序：其他 `DIRECT` 规则不能放行已被提前拦截的目标。DNS 的 53 端口限制仍按原有范围生效。
+广告条件明确排除 `corporate-domains`，公司业务域名沿用对应的公司分流与 DNS 设置。提前拦截独立于普通规则顺序：其他 `DIRECT` 规则不能放行已被提前拦截的目标。DNS 的 53 端口限制仍按原有范围生效。
 
 在“远程资源”查看上述集合的更新时间，确认规则已加载。提前拒绝的请求不进入连接列表，可通过核心日志中的 `pre-matched` 记录，或 [HTTP API](https://stash.wiki/features/http-api) 的 `/rules/match` 查询目标、命中规则和 `stage`。排查功能异常时需要记录实际请求域名和命中结果。
 
 ## 公司 VPN（Windows）
 
-公司域名沿用 [mihomo 覆写](../mihomo/AIsouler.js)中的 `guorenpcic.com`。主配置通过 `corporate-domains` 集合统一管理分流、`nameserver-policy` 和 `fake-ip-filter`：公司域名交给系统 DNS 解析，返回真实 IP，并优先匹配 `DIRECT`。字段用法见 [Stash DNS 文档](https://stash.wiki/features/dns-server)。aTrust 负责建立公司 VPN、提供内网解析能力和业务路由。
+公司域名沿用 [mihomo 覆写](../mihomo/AIsouler.js)中的 `guorenpcic.com`，由 `corporate-domains` 集合管理。主配置默认使用系统 DNS、真实 IP 和 `DIRECT`。启用 [aTrust.stoverride](aTrust.stoverride) 后，公司业务域名和 5 个公司地址范围优先使用本机 `aTrust` SOCKS5 节点，地址为 `127.0.0.1:11080`。zju-connect 独立完成公司登录与 VPN 转发。
 
-安装新设备或重新安装 Stash 时，按 [Windows 公司 VPN 配置指南](windows-vpn.md)完成系统代理绕过、5 条网段排除和开关设置。指南提供可复制的完整绕过列表、操作位置、验证命令和故障检查方法。这些 Windows 设置保存在本机，需要与 YAML 主配置一起配置。
+覆写将公司域名恢复为 Fake-IP，TCP 请求携带域名进入 zju-connect。zju-connect 进程与 VPN 网关直连；内网节点关闭测速与 UDP，并从机场地区组中排除。
+
+按 [Windows 公司内网配置指南](windows-vpn.md)启动 zju-connect、启用覆写，并删除 Windows 中的公司域名绕过和 5 条公司网段排除。开启增强模式和系统代理，让请求先进入 Stash。这些 Windows 设置独立保存在本机，不随覆写开关恢复。当前监听地址仅供 Windows 本机使用。
 
 ## DNS 与接管范围
 
@@ -208,7 +210,8 @@ Netflix、Disney+、YouTube 等通用服务继续使用默认代理。测速集�
 
 | 查询用途 | 解析方式 | 出口 |
 | --- | --- | --- |
-| 公司域名 `guorenpcic.com` 及其子域名 | system，由系统和 aTrust 提供解析 | 系统解析通道 |
+| 公司域名，未启用公司内网覆写 | system，返回真实地址 | 系统解析通道 |
+| 公司业务域名，启用公司内网覆写 | Fake-IP，TCP 域名交给 zju-connect 处理 | aTrust 节点 |
 | 机场节点域名、DNS Bootstrap | 阿里 DoH | 独立直连通道 |
 | 需要直连的服务、局域网真实解析 | 阿里 DoH | DIRECT |
 | 未命中域名规则、需要判断 IP 的连接 | 阿里 DoH | DIRECT |
@@ -219,19 +222,19 @@ Fake-IP 把应用得到的地址与目标域名关联起来。对于支持域名
 
 IP 规则阶段得到的地址用于判断出口。使用支持域名转发的 TCP 代理时，最终仍交给节点解析目标。DNS 服务器使用 IP 地址，机场节点域名通过独立通道解析，启动代理不依赖已经建立的代理连接。
 
-公共 DNS 上游查询使用 DoH，保持 TLS 证书校验。公司域名使用 `system` 例外，可能使用 UDP / TCP 53，其解析路径与传输保护由系统和 aTrust 决定。国内解析服务可以看到其他直连域名、节点域名和需要判断 IP 的未知域名查询。未知境外域名也可能进入 IP 判断阶段。机场节点端的 DNS 由机场控制。
+公共 DNS 上游查询使用 DoH，保持 TLS 证书校验。主配置中的公司域名使用 `system` 例外，可能使用 UDP / TCP 53，其解析路径与传输保护由系统决定。启用公司内网覆写后，公司 TCP 请求携带域名进入 zju-connect。国内解析服务可以看到其他直连域名、节点域名和需要判断 IP 的未知域名查询。未知境外域名也可能进入 IP 判断阶段。机场节点端的 DNS 由机场控制。
 
 **UDP 代理解析有独立限制。** 根据 [Stash 协议文档](https://stash.wiki/proxy-protocols/proxy-types)，Stash 转发 UDP 时需要目标 IP，会通过代理发起 DNS 查询；`udp-nameserver` 仅支持 UDP。使用加密代理时，本机到节点这一段由代理保护，节点到 DNS 服务器这一段仍可能使用明文 UDP 53。`dns.nameserver` 中的 DoH 无法保证这一段也加密。WireGuard、MASQUE 等隧道协议还有各自的 DNS 配置，使用此类机场节点时需要单独核查。
 
-规则首条为 `DST-PORT,53,REJECT,pre-matching`，阻止进入 Stash 分流引擎的 TCP、UDP 53 端口连接，覆盖 IPv4 和 IPv6。`pre-matching` 是 3.7 新增的提前拒绝选项：iOS 在读取连接数据前拒绝，UDP 在首个数据包阶段拒绝，从而减少连接处理。Stash 内置 DNS 服务按上述公共 DoH 和公司域名 policy 处理查询。这条规则的控制范围是进入分流引擎的连接，不包括系统绕过流量、公司 VPN 内的独立 DNS 通信和机场服务器自己的 DNS 请求。选项语义与支持的规则类型见 [规则类型文档](https://stash.wiki/rules/rule-types)。
+主配置规则首条为 `DST-PORT,53,REJECT,pre-matching`，阻止进入 Stash 分流引擎的 TCP、UDP 53 端口连接，覆盖 IPv4 和 IPv6。`pre-matching` 是 3.7 新增的提前拒绝选项：iOS 在读取连接数据前拒绝，UDP 在首个数据包阶段拒绝，从而减少连接处理。Stash 内置 DNS 服务按当前应用的 DNS 配置处理查询。这条规则的控制范围是进入分流引擎的连接，不包括系统绕过流量、公司 VPN 内的独立 DNS 通信和机场服务器自己的 DNS 请求。选项语义与支持的规则类型见 [规则类型文档](https://stash.wiki/rules/rule-types)。
 
 提前拒绝的请求不会出现在连接列表中。核心日志按目标限制记录频率；需要确认匹配阶段时，可使用 [HTTP API](https://stash.wiki/features/http-api) 的 `/rules/match` 查看 `stage` 字段。
 
-仅由路由器或公司 DNS 解析的内网域名，公共 DoH 通常无法解析。当前公司域名通过专用 policy 使用系统解析。其他内网域名可以通过 `hosts` 指定地址，或为其单独配置可用的内网 DNS；内网 DNS 支持 DoH、DoT 或 DoQ 时可使用对应的加密协议。发给公共 DoH 的内网域名会对该解析服务可见。
+仅由路由器或公司 DNS 解析的内网域名，公共 DoH 通常无法解析。主配置中的公司域名通过专用 policy 使用系统解析；公司内网覆写启用后，TCP 请求通过 Fake-IP 和 SOCKS5 将域名交给 zju-connect。其他内网域名可以通过 `hosts` 指定地址，或为其单独配置可用的内网 DNS；内网 DNS 支持 DoH、DoT 或 DoQ 时可使用对应的加密协议。发给公共 DoH 的内网域名会对该解析服务可见。
 
 顶层 `ipv6: false` 让 Stash 自身只解析 IPv4，`dns.ipv6: false` 让应用 DNS 查询不返回 AAAA 记录。这两个设置控制 DNS 解析，直接访问 IPv6 地址的流量仍需要 Tunnel IPv6 路由接管。
 
-Fake-IP 的真实地址例外包含公司域名、局域网集合和 Sukka 的 `clash_fake_ip_filter`，覆盖 `.m2m`、`.bogon` 与 AdGuard 本地辅助域名。该集合只影响 DNS 返回真实地址的范围。公共 DNS 的每种查询用途配置一个 DoH 上游，公司域名由系统解析。Stash 自带乐观 DNS 缓存，缓存过期时继续使用已有结果，并在后台更新。
+主配置的 Fake-IP 真实地址例外包含公司域名、局域网集合和 Sukka 的 `clash_fake_ip_filter`，覆盖 `.m2m`、`.bogon` 与 AdGuard 本地辅助域名。公司内网覆写启用后，真实地址例外仅保留局域网与 Sukka 集合，公司业务域名返回 Fake-IP。公共 DNS 的每种查询用途配置一个 DoH 上游。Stash 自带乐观 DNS 缓存，缓存过期时继续使用已有结果，并在后台更新。
 
 DNS 出口检测网站展示的是递归 DNS 访问权威 DNS 时的出口。出现国内解析器与本配置的国内直连、未知域名 IP 判断可以一致，单凭这个结果无法判定设备发生了明文 DNS 泄漏。检查时需要结合目标域名、命中规则、实际代理节点，以及设备是否向外发送了明文 53 端口请求。
 
@@ -270,23 +273,23 @@ python stash/check_config.py --online --proxy http://127.0.0.1:7890
 
 `--proxy` 仅用于下载公开规则，DoH 检查不指定 HTTP 代理。代理端口按本机配置填写。联网检查会访问真实公开服务；解析结果变化时，脚本直接报告失败。
 
-本地配置与上游联网检查最近验证于 2026-11-05：
+公开规则联网检查最近验证于 2026-11-05，本地配置与公司内网覆写验证于 2026-11-06：
 
-- 16 项本地检查通过，涵盖主配置与机场模板的 YAML 解析、重复键、分组引用、地区过滤表达式、空组保护、流媒体故障切换结构及递归测速范围、内置 DNS 加密、Fake-IP 例外、域名与 IP 规则顺序、流媒体优先级、Sukka 拦截覆盖与公司域名豁免、机场覆写范围和图标集。
+- 17 项本地检查通过，涵盖主配置与覆写的 YAML 解析、重复键、分组引用、地区过滤表达式、内网节点隔离、空组保护、流媒体故障切换结构及递归测速范围、内置 DNS 加密、Fake-IP 例外、公司规则范围、域名与 IP 规则顺序、流媒体优先级、Sukka 拦截覆盖与公司域名豁免、机场覆写范围和图标集。
 - 8 个节点分类通过 `include-all: true` 汇集节点，7 个地区自动测速，“其他地区”手动选择。主配置的 `proxy-providers` 为空字典。`Subscribe.stoverride` 只定义一个代理集及展示字段，显示名称固定为“Sub-Store 订阅”，订阅地址指向 Sub-Store 的 `Subscribe` 集合，测速使用 HTTP 204 地址。
 - 公共 DNS 上游均为 HTTPS DNS，只有公司域名 policy 使用 `system`。`follow-rule` 关闭，两个 IPv6 解析开关关闭，53 端口提前拦截位于全部分流规则之前。
 - 配置包含 47 个远程集合与 3 个 inline 集合，引用检查通过。远程集合已通过规则类型和 CIDR 格式检查；Sukka `non_ip` 集合中附带的 IP 条目均包含 `no-resolve`，不会自行触发域名解析。
 - 7 条地区流媒体规则引用 6 个隐藏的故障切换组，通用流媒体引用默认代理；主配置包含 15 个展示组，图标集对应这 15 个组。引用检查确认全部目标有效且不存在循环依赖。递归检查确认每个辅助组只引用指定的两个基础地区组，两个地区均保留 `REJECT` 保护。
-- 8 个节点分类显式包含 `REJECT`，全部地区过滤均保留 `REJECT` 并排除 `DIRECT`。Windows 0.1.47 的只读 `/proxies` 查询确认内置 `REJECT` 返回 `alive: false`、`state: unhealthy`；本次未加载新配置进行地区断线与恢复演练。
+- 8 个节点分类显式包含 `REJECT`，全部地区过滤均保留 `REJECT` 并排除 `DIRECT`。Windows 0.1.47 的只读 `/proxies` 查询确认内置 `REJECT` 返回 `alive: false`、`state: unhealthy`；地区断线与恢复演练尚未执行。
 - “其他地区”的节点过滤与各自动地区组互不重复，订阅提示项从该分类排除。韩国和欧洲流媒体分别引用对应地区组，英国、德国、荷兰等节点统一归入欧洲。
 - 秋风完整规则下载与 YAML 解析通过，Windows 已加载全部 976 条，包含 960 条精确域名、12 条域名后缀和 4 条关键词规则。`ad-api.4pyun.com` 与 `unityads.unity3d.com` 在规则诊断中命中提前拒绝，广告条件明确排除公司域名集合。
-- 公司 VPN 设置已在 Windows 0.1.47 验证。公司域名命中 `corporate-domains`，Stash DNS API 确认解析来源为 `system`。本机使用系统代理绕过和 5 条隧道网段排除，内网 HTTP 请求返回 `200`。
+- 公司内网覆写已在 Windows 0.1.47 与 zju-connect v1.3.1 验证。公司域名返回 Fake-IP，实际请求命中 `corporate-domains` 并经 `aTrust` 节点收到 HTTP 200。公司域名绕过与 5 条公司网段排除已移除，5 个公司地址范围均命中内网节点。官方 aTrust 服务停止、进程全部退出、虚拟网卡断开后，6 项真实访问检查通过：公司域名和真实 IP 经 Stash 访问均返回 HTTP 200，Apple HTTPS 直连返回 HTTP 200，Google HTTPS 经原有香港节点返回 HTTP 204。其余公司业务服务尚未逐项验证。
 - 1Password 的 11 个域名条目使用 `domain` 集合，直连规则优先于下载和通用境外服务规则。
 - 山姆的 `api-sams.walmartmobile.cn`、`decoration-sams.walmartmobile.cn` 通过国内 DoH 返回 `157.148.16.212`，属于 Sukka 中国 IP 集合。
 - 万达的 `cinema-api-prd-mx.wandafilm.com`、`misc-api-prd-mx.wandafilm.com` 通过国内 DoH 返回 `120.53.82.119`，属于 Sukka 中国 IP 集合。
 - `223.5.5.5` 在不指定 HTTP 代理时，为 8 个业务域名返回有效的 DoH 答案，验证过程保持 TLS 证书校验。
 
-上游联网检查验证了规则服务与 DoH 的可用性；公司内网检查还验证了 Stash 的实际 DNS policy、Windows 系统代理绕过和 aTrust 路由。HTTP 检查未执行公司系统的账号登录或业务操作。
+上游联网检查验证了规则服务与 DoH 的可用性；公司内网检查还验证了 Fake-IP、Stash 请求出口、Windows 系统代理绕过移除和隧道接管。HTTP 检查未执行公司业务系统的账号登录或业务操作。
 
 检查脚本只读取仓库文件和公开规则、查询 DoH，不修改已安装 Stash 的配置、订阅或策略选择。更新主配置由使用者在应用中操作。流媒体的实际播放权限与 iOS、macOS 的设备耗电尚未实测。
 

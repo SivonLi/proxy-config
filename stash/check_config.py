@@ -232,6 +232,42 @@ class ConfigTests(unittest.TestCase):
                 # 内置拒绝出口必须通过地区过滤，DIRECT 不得进入地区组。
                 self.assertIsNotNone(re.search(group["filter"], "REJECT"))
                 self.assertIsNone(re.search(group["filter"], "DIRECT"))
+                self.assertIsNone(re.search(group["filter"], "aTrust"))
+
+    def test_corporate_override(self):
+        overlay = YAML().load(ROOT / "aTrust.stoverride")
+        self.assertEqual(len(overlay["proxies"]), 1)
+        node = overlay["proxies"][0]
+        self.assertEqual(node["name"], "aTrust")
+        self.assertEqual(node["type"], "socks5")
+        self.assertTrue(ipaddress.ip_address(node["server"]).is_loopback)
+        self.assertEqual(node["port"], 11080)
+        self.assertTrue(node["benchmark-disabled"])
+        self.assertFalse(node["udp"])
+        self.assertNotIn("proxy-groups", overlay)
+        self.assertNotIn("proxy-providers", overlay)
+        self.assertEqual(overlay["dns"]["nameserver-policy"], {})
+        self.assertEqual(overlay["dns"]["fake-ip-filter"],
+                         ["rule-set:lan", "rule-set:fake-ip-exclude"])
+        for field in ["nameserver-policy", "fake-ip-filter"]:
+            comment = overlay["dns"].ca.items[field][2]
+            self.assertIn("#!replace", comment.value)
+        rules = list(csv.reader(overlay["rules"]))
+        self.assertFalse(any(rule[0] == "MATCH" for rule in rules))
+        company = ["RULE-SET", "corporate-domains", "aTrust"]
+        gateway = ["DOMAIN", "vpn.guorenpcic.com", "DIRECT"]
+        self.assertLess(rules.index(gateway), rules.index(company))
+        self.assertLess(rules.index(["PROCESS-NAME", "zju-connect.exe", "DIRECT"]),
+                        rules.index(company))
+        expected = {"10.75.0.0/16", "10.100.11.24/32", "10.78.137.33/32",
+                    "172.18.20.200/32", "172.31.200.5/32"}
+        networks = {rule[1] for rule in rules if rule[0] == "IP-CIDR"}
+        self.assertEqual(networks, expected)
+        for rule in rules:
+            if rule[0] == "IP-CIDR":
+                self.assertEqual(rule[2:], ["aTrust", "no-resolve"])
+            if rule[2] == "aTrust":
+                self.assertIn(rule[0], {"RULE-SET", "IP-CIDR"})
 
     def test_streaming_fallback(self):
         groups = {item["name"]: item for item in CONFIG["proxy-groups"]}
