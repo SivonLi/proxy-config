@@ -1,0 +1,666 @@
+# ============================================================================
+# mihomo (Clash.Meta) 配置 —— 由 stash/stash.yaml 改写，适用于 ClashBar
+# 内核校验版本：mihomo v1.19.33
+#
+# 使用前必须修改：
+#   1. proxy-providers.Sub-Store-Subscribe.url 填写你自己的订阅地址
+#      （地址含凭证，请只保存在本机，不要提交到仓库）
+#   2. 其余内容无需修改；规则集合首次启动时由内核自动下载到 ./rules/
+#
+# 与 Stash 版的主要差异见文件内带 [mihomo] 标记的注释。
+# ============================================================================
+
+# ---- 通用 ----
+# 端口、局域网访问、IPv6、日志级别等可在 ClashBar「设置」中覆盖。
+mixed-port: 7890
+allow-lan: false
+mode: rule
+log-level: warning
+ipv6: false
+unified-delay: true
+tcp-concurrent: true
+# [mihomo] 如 ClashBar 提示 API 鉴权失败 / bad response，检查此地址是否与其内核端口一致，
+# 或被其他 Clash 系客户端占用。
+external-controller: 127.0.0.1:9090
+
+# [mihomo] Stash 自动记忆手动选择；mihomo 需要显式开启。
+profile:
+  store-selected: true
+  store-fake-ip: true
+
+# [mihomo] 默认关闭；在 ClashBar 中开启 TUN 时使用以下参数。
+tun:
+  enable: false
+  stack: mixed
+  auto-route: true
+  auto-detect-interface: true
+  strict-route: false
+  dns-hijack:
+    - any:53
+    - tcp://any:53
+
+dns:
+  enable: true
+  # [mihomo] Stash 默认就是 Fake-IP，mihomo 需要显式指定。
+  enhanced-mode: fake-ip
+  fake-ip-range: 198.18.0.1/16
+  # [mihomo] Stash 的 follow-rule 对应 respect-rules，默认关闭，无需填写。
+  # 仅控制应用的 AAAA 查询；Stash 原配置同为关闭。
+  ipv6: false
+  # 内置 DNS 直连国内 DoH；Fake-IP 代理 TCP 连接由所选节点解析目标域名。
+  default-nameserver:
+    - https://223.5.5.5/dns-query
+  proxy-server-nameserver:
+    - https://223.5.5.5/dns-query
+  nameserver:
+    - https://223.5.5.5/dns-query
+  # 公司域名交给系统解析，沿用 aTrust 的内网解析能力。
+  nameserver-policy:
+    'rule-set:corporate-domains': system
+  # 公司、局域网与 Sukka 真实地址例外返回真实 IP。
+  fake-ip-filter:
+    - 'rule-set:corporate-domains'
+    - 'rule-set:lan'
+    - 'rule-set:fake-ip-exclude'
+
+# [mihomo] Stash 通过 Subscribe.stoverride 注入订阅；mihomo 直接写在主配置里。
+# Stash 里的 http://sub.store/... 只在 Stash 内部可用，这里需要换成可从本机访问的地址：
+#   - 机场提供的 Clash/mihomo 订阅链接，或
+#   - 自建 Sub-Store 的 .../download/collection/Subscribe?target=ClashMeta
+proxy-providers:
+  Sub-Store-Subscribe:
+    type: http
+    url: 'https://YOUR-SUBSCRIPTION-URL-HERE'
+    path: ./providers/Sub-Store-Subscribe.yaml
+    interval: 86400
+    health-check:
+      enable: true
+      url: http://www.gstatic.com/generate_204
+      interval: 600
+      lazy: true
+
+# 手动分组不做定时测速；命名地区按需测速，其他地区手动选择节点。
+# [mihomo] 地区组的 proxies: [REJECT] 保证组永不为空（空组会回落到 DIRECT）；
+#          filter 只作用于订阅节点，不会过滤静态写入的 REJECT。
+proxy-groups:
+  - name: 默认代理
+    type: select
+    icon: https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/proxy.png?v=2
+    proxies: [香港, 日本, 美国, 新加坡, 台湾, 韩国, 欧洲, 其他地区]
+  - name: AI
+    type: select
+    icon: https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/apple-intelligence.png?v=2
+    proxies: [新加坡, 美国, 日本, 台湾, 韩国, 欧洲, 其他地区]
+  - name: Lark
+    type: select
+    icon: https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/lark.png?v=2
+    proxies: [日本, 默认代理]
+  - name: Apple
+    type: select
+    icon: https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/apple.png?v=2
+    proxies: [DIRECT, 默认代理, 美国]
+  - name: Microsoft
+    type: select
+    icon: https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/microsoft.png?v=2
+    proxies: [DIRECT, 默认代理]
+  - name: 下载
+    type: select
+    icon: https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/download.png?v=2
+    proxies: [默认代理, DIRECT]
+  - name: 测速
+    type: select
+    icon: https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/speedtest.png?v=2
+    proxies: [DIRECT, 香港, 日本, 美国, 新加坡, 台湾, 韩国, 欧洲, 其他地区]
+  # REJECT 保证地区组始终非空；自动选择会跳过这个不可用出口。
+  - name: 香港
+    type: url-test
+    url: http://www.gstatic.com/generate_204
+    icon: https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/hong-kong.png?v=2
+    proxies: [REJECT]
+    include-all: true
+    filter: '(?i)^REJECT$|🇭🇰|香港|(^|[^a-z])hkg?([^a-z]|$)|hong[ -]*kong'
+    interval: 600
+    tolerance: 50
+    lazy: true
+  - name: 日本
+    type: url-test
+    url: http://www.gstatic.com/generate_204
+    icon: https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/japan.png?v=2
+    proxies: [REJECT]
+    include-all: true
+    filter: '(?i)^REJECT$|🇯🇵|日本|东京|東京|大阪|京都|(^|[^a-z])jpn?([^a-z]|$)|japan|tokyo|osaka'
+    interval: 600
+    tolerance: 50
+    lazy: true
+  - name: 美国
+    type: url-test
+    url: http://www.gstatic.com/generate_204
+    icon: https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/united-states.png?v=2
+    proxies: [REJECT]
+    include-all: true
+    filter: '(?i)^REJECT$|🇺🇸|美国|美國|纽约|紐約|洛杉矶|洛杉磯|旧金山|舊金山|西雅图|西雅圖|(^|[^a-z])usa?([^a-z]|$)|america|united[ -]*states'
+    interval: 600
+    tolerance: 50
+    lazy: true
+  - name: 新加坡
+    type: url-test
+    url: http://www.gstatic.com/generate_204
+    icon: https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/singapore.png?v=2
+    proxies: [REJECT]
+    include-all: true
+    filter: '(?i)^REJECT$|🇸🇬|新加坡|狮城|獅城|(^|[^a-z])sgp?([^a-z]|$)|singapore'
+    interval: 600
+    tolerance: 50
+    lazy: true
+  - name: 台湾
+    type: url-test
+    url: http://www.gstatic.com/generate_204
+    icon: https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/taiwan.png?v=2
+    proxies: [REJECT]
+    include-all: true
+    filter: '(?i)^REJECT$|🇹🇼|台湾|台灣|臺灣|台北|臺北|高雄|(^|[^a-z])twn?([^a-z]|$)|taiwan'
+    interval: 600
+    tolerance: 50
+    lazy: true
+  - name: 韩国
+    type: url-test
+    url: http://www.gstatic.com/generate_204
+    icon: https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/korea.png?v=2
+    proxies: [REJECT]
+    include-all: true
+    filter: '(?i)^REJECT$|🇰🇷|韩国|韓國|首尔|首爾|釜山|(^|[^a-z])kor?([^a-z]|$)|(^|[^a-z])kr([^a-z]|$)|korea|seoul|busan'
+    interval: 600
+    tolerance: 50
+    lazy: true
+  - name: 欧洲
+    type: url-test
+    url: http://www.gstatic.com/generate_204
+    icon: https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/europe.png?v=2
+    proxies: [REJECT]
+    include-all: true
+    # 英国、德国、荷兰等欧洲节点统一参与测速。
+    filter: '(?i)^REJECT$|🇪🇺|🇬🇧|🇩🇪|🇳🇱|🇫🇷|🇮🇪|🇨🇭|🇸🇪|🇫🇮|🇳🇴|🇩🇰|🇮🇸|🇪🇸|🇵🇹|🇮🇹|🇦🇹|🇧🇪|🇱🇺|🇵🇱|🇨🇿|🇸🇰|🇭🇺|🇷🇴|🇧🇬|🇬🇷|🇪🇪|🇱🇻|🇱🇹|🇸🇮|🇭🇷|🇷🇸|🇺🇦|欧洲|歐洲|英国|英國|伦敦|倫敦|德国|德國|法兰克福|法蘭克福|荷兰|荷蘭|阿姆斯特丹|法国|法國|巴黎|爱尔兰|愛爾蘭|瑞士|瑞典|芬兰|芬蘭|挪威|丹麦|丹麥|冰岛|冰島|西班牙|葡萄牙|意大利|義大利|奥地利|奧地利|比利时|比利時|卢森堡|盧森堡|波兰|波蘭|捷克|斯洛伐克|匈牙利|罗马尼亚|羅馬尼亞|保加利亚|保加利亞|希腊|希臘|爱沙尼亚|愛沙尼亞|拉脱维亚|拉脫維亞|立陶宛|斯洛文尼亚|斯洛文尼亞|克罗地亚|克羅地亞|塞尔维亚|塞爾維亞|乌克兰|烏克蘭|(^|[^a-z])(eu|uk|gbr|deu?|nld?|fra?|irl|che|swe|fin|nor|dnk|isl|esp|prt|ita|aut|bel|lux|pol|cze|svk|hun|rou|bgr|grc|est|lva|ltu|svn|hrv|srb|ukr)([^a-z]|$)|europe|united[ -]*kingdom|britain|london|germany|frankfurt|netherlands|amsterdam|france|paris|ireland|switzerland|sweden|finland|norway|denmark|iceland|spain|portugal|italy|austria|belgium|luxembourg|poland|czech|slovakia|hungary|romania|bulgaria|greece|estonia|latvia|lithuania|slovenia|croatia|serbia|ukraine'
+    interval: 600
+    tolerance: 50
+    lazy: true
+  - name: 其他地区
+    type: select
+    icon: https://raw.githubusercontent.com/SivonLi/proxy-config/configs/stash/icons/rounded/other-regions.png?v=2
+    # 首次使用此手动组时，选择需要的机场节点。
+    proxies: [REJECT]
+    include-all: true
+    # 排除内网节点、已命名地区与订阅提示。
+    filter: '(?i)^(?!DIRECT$|aTrust$)(?!.*(?:🇭🇰|香港|(^|[^a-z])hkg?([^a-z]|$)|hong[ -]*kong|🇯🇵|日本|东京|東京|大阪|京都|(^|[^a-z])jpn?([^a-z]|$)|japan|tokyo|osaka|🇺🇸|美国|美國|纽约|紐約|洛杉矶|洛杉磯|旧金山|舊金山|西雅图|西雅圖|(^|[^a-z])usa?([^a-z]|$)|america|united[ -]*states|🇸🇬|新加坡|狮城|獅城|(^|[^a-z])sgp?([^a-z]|$)|singapore|🇹🇼|台湾|台灣|臺灣|台北|臺北|高雄|(^|[^a-z])twn?([^a-z]|$)|taiwan|🇰🇷|韩国|韓國|首尔|首爾|釜山|(^|[^a-z])kor?([^a-z]|$)|(^|[^a-z])kr([^a-z]|$)|korea|seoul|busan|🇪🇺|🇬🇧|🇩🇪|🇳🇱|🇫🇷|🇮🇪|🇨🇭|🇸🇪|🇫🇮|🇳🇴|🇩🇰|🇮🇸|🇪🇸|🇵🇹|🇮🇹|🇦🇹|🇧🇪|🇱🇺|🇵🇱|🇨🇿|🇸🇰|🇭🇺|🇷🇴|🇧🇬|🇬🇷|🇪🇪|🇱🇻|🇱🇹|🇸🇮|🇭🇷|🇷🇸|🇺🇦|欧洲|歐洲|英国|英國|伦敦|倫敦|德国|德國|法兰克福|法蘭克福|荷兰|荷蘭|阿姆斯特丹|法国|法國|巴黎|爱尔兰|愛爾蘭|瑞士|瑞典|芬兰|芬蘭|挪威|丹麦|丹麥|冰岛|冰島|西班牙|葡萄牙|意大利|義大利|奥地利|奧地利|比利时|比利時|卢森堡|盧森堡|波兰|波蘭|捷克|斯洛伐克|匈牙利|罗马尼亚|羅馬尼亞|保加利亚|保加利亞|希腊|希臘|爱沙尼亚|愛沙尼亞|拉脱维亚|拉脫維亞|立陶宛|斯洛文尼亚|斯洛文尼亞|克罗地亚|克羅地亞|塞尔维亚|塞爾維亞|乌克兰|烏克蘭|(^|[^a-z])(eu|uk|gbr|deu?|nld?|fra?|irl|che|swe|fin|nor|dnk|isl|esp|prt|ita|aut|bel|lux|pol|cze|svk|hun|rou|bgr|grc|est|lva|ltu|svn|hrv|srb|ukr)([^a-z]|$)|europe|united[ -]*kingdom|britain|london|germany|frankfurt|netherlands|amsterdam|france|paris|ireland|switzerland|sweden|finland|norway|denmark|iceland|spain|portugal|italy|austria|belgium|luxembourg|poland|czech|slovakia|hungary|romania|bulgaria|greece|estonia|latvia|lithuania|slovenia|croatia|serbia|ukraine|剩余流量|剩餘流量|套餐到期|订阅到期|訂閱到期|距离下次重置|距離下次重置|流量重置|到期时间|到期時間|traffic[ _-]*remaining|expire[sd]?|reset[ _-]*date)).+'
+
+  # 优先地区与指定备用地区按需测速；隐藏辅助组定期检查恢复情况。
+  - name: 流媒体-日本
+    type: fallback
+    url: http://www.gstatic.com/generate_204
+    hidden: true
+    proxies: [日本, 香港]
+    interval: 600
+    lazy: true
+  - name: 流媒体-美国
+    type: fallback
+    url: http://www.gstatic.com/generate_204
+    hidden: true
+    proxies: [美国, 香港]
+    interval: 600
+    lazy: true
+  - name: 流媒体-欧洲
+    type: fallback
+    url: http://www.gstatic.com/generate_204
+    hidden: true
+    proxies: [欧洲, 香港]
+    interval: 600
+    lazy: true
+  - name: 流媒体-韩国
+    type: fallback
+    url: http://www.gstatic.com/generate_204
+    hidden: true
+    proxies: [韩国, 香港]
+    interval: 600
+    lazy: true
+  - name: 流媒体-香港
+    type: fallback
+    url: http://www.gstatic.com/generate_204
+    hidden: true
+    proxies: [香港, 新加坡]
+    interval: 600
+    lazy: true
+  - name: 流媒体-台湾
+    type: fallback
+    url: http://www.gstatic.com/generate_204
+    hidden: true
+    proxies: [台湾, 香港]
+    interval: 600
+    lazy: true
+
+rule-providers:
+  # Sukka 公共拦截：大型域名集合使用 domain，其余保留官方 classical 格式。
+  reject-domain:
+    type: http
+    behavior: domain
+    format: text
+    url: https://ruleset.skk.moe/Clash/domainset/reject.txt
+    path: ./rules/reject-domain.txt
+    interval: 86400
+  reject-extra:
+    type: http
+    behavior: domain
+    format: text
+    url: https://ruleset.skk.moe/Clash/domainset/reject_extra.txt
+    path: ./rules/reject-extra.txt
+    interval: 86400
+  reject-phishing:
+    type: http
+    behavior: domain
+    format: text
+    url: https://ruleset.skk.moe/Clash/domainset/reject_phishing.txt
+    path: ./rules/reject-phishing.txt
+    interval: 86400
+  reject:
+    type: http
+    behavior: classical
+    format: text
+    url: https://ruleset.skk.moe/Clash/non_ip/reject.txt
+    path: ./rules/reject.txt
+    interval: 86400
+  reject-drop:
+    type: http
+    behavior: classical
+    format: text
+    url: https://ruleset.skk.moe/Clash/non_ip/reject-drop.txt
+    path: ./rules/reject-drop.txt
+    interval: 86400
+  reject-no-drop:
+    type: http
+    behavior: classical
+    format: text
+    url: https://ruleset.skk.moe/Clash/non_ip/reject-no-drop.txt
+    path: ./rules/reject-no-drop.txt
+    interval: 86400
+  sogouinput:
+    type: http
+    behavior: classical
+    format: text
+    url: https://ruleset.skk.moe/Clash/non_ip/sogouinput.txt
+    path: ./rules/sogouinput.txt
+    interval: 86400
+  # 秋风完整规则包含广告、隐私跟踪与不受欢迎的服务域名。
+  awavenue:
+    type: http
+    behavior: classical
+    format: yaml
+    url: https://raw.githubusercontent.com/TG-Twilight/AWAvenue-Ads-Rule/main/Filters/AWAvenue-Ads-Rule-Clash-Classical.yaml
+    path: ./rules/awavenue.yaml
+    interval: 86400
+  corporate-domains:
+    type: inline
+    behavior: domain
+    payload:
+      - '+.guorenpcic.com'
+  # 1Password 专用域名取自 Sukka 规则与官方网络清单。
+  onepassword:
+    type: inline
+    behavior: domain
+    payload:
+      - '+.1password.com'
+      - '+.1password.eu'
+      - '+.1password.ca'
+      - '+.1password.community'
+      - '+.1passwordservices.com'
+      - '+.1passwordusercontent.com'
+      - '+.1passwordusercontent.eu'
+      - '+.1passwordusercontent.ca'
+      - '+.1infra.net'
+      - app-updates.agilebits.com
+      - cache.agilebits.com
+  # Lark 专用域名来自官方防火墙域名清单。
+  lark:
+    type: inline
+    behavior: domain
+    payload:
+      - '+.larksuite.com'
+      - '+.larksuite-us.com'
+      - '+.larksuitecdn.com'
+      - '+.larksuitepkg.com'
+      - '+.larkenterprise.com'
+      - '+.baseopendevx.com'
+  lan:
+    type: http
+    behavior: classical
+    format: text
+    url: https://ruleset.skk.moe/Clash/non_ip/lan.txt
+    path: ./rules/lan.txt
+    interval: 86400
+  fake-ip-exclude:
+    type: http
+    behavior: domain
+    format: text
+    url: https://ruleset.skk.moe/Clash/domainset/clash_fake_ip_filter.txt
+    path: ./rules/fake-ip-exclude.txt
+    interval: 86400
+  speedtest:
+    type: http
+    behavior: domain
+    format: text
+    url: https://ruleset.skk.moe/Clash/domainset/speedtest.txt
+    path: ./rules/speedtest.txt
+    interval: 86400
+  ai:
+    type: http
+    behavior: classical
+    format: text
+    url: https://ruleset.skk.moe/Clash/non_ip/ai.txt
+    path: ./rules/ai.txt
+    interval: 86400
+  apple-intelligence:
+    type: http
+    behavior: classical
+    format: text
+    url: https://ruleset.skk.moe/Clash/non_ip/apple_intelligence.txt
+    path: ./rules/apple-intelligence.txt
+    interval: 86400
+  stream:
+    type: http
+    behavior: classical
+    format: text
+    url: https://ruleset.skk.moe/Clash/non_ip/stream.txt
+    path: ./rules/stream.txt
+    interval: 86400
+  stream-us:
+    type: http
+    behavior: classical
+    format: text
+    url: https://ruleset.skk.moe/Clash/non_ip/stream_us.txt
+    path: ./rules/stream-us.txt
+    interval: 86400
+  stream-eu:
+    type: http
+    behavior: classical
+    format: text
+    url: https://ruleset.skk.moe/Clash/non_ip/stream_eu.txt
+    path: ./rules/stream-eu.txt
+    interval: 86400
+  stream-jp:
+    type: http
+    behavior: classical
+    format: text
+    url: https://ruleset.skk.moe/Clash/non_ip/stream_jp.txt
+    path: ./rules/stream-jp.txt
+    interval: 86400
+  stream-kr:
+    type: http
+    behavior: classical
+    format: text
+    url: https://ruleset.skk.moe/Clash/non_ip/stream_kr.txt
+    path: ./rules/stream-kr.txt
+    interval: 86400
+  stream-hk:
+    type: http
+    behavior: classical
+    format: text
+    url: https://ruleset.skk.moe/Clash/non_ip/stream_hk.txt
+    path: ./rules/stream-hk.txt
+    interval: 86400
+  stream-tw:
+    type: http
+    behavior: classical
+    format: text
+    url: https://ruleset.skk.moe/Clash/non_ip/stream_tw.txt
+    path: ./rules/stream-tw.txt
+    interval: 86400
+  stream-biliintl:
+    type: http
+    behavior: classical
+    format: text
+    url: https://ruleset.skk.moe/Clash/non_ip/stream_biliintl.txt
+    path: ./rules/stream-biliintl.txt
+    interval: 86400
+  telegram:
+    type: http
+    behavior: classical
+    format: text
+    url: https://ruleset.skk.moe/Clash/non_ip/telegram.txt
+    path: ./rules/telegram.txt
+    interval: 86400
+  apple-cdn:
+    type: http
+    behavior: domain
+    format: text
+    url: https://ruleset.skk.moe/Clash/domainset/apple_cdn.txt
+    path: ./rules/apple-cdn.txt
+    interval: 86400
+  apple-cn:
+    type: http
+    behavior: classical
+    format: text
+    url: https://ruleset.skk.moe/Clash/non_ip/apple_cn.txt
+    path: ./rules/apple-cn.txt
+    interval: 86400
+  apple-services:
+    type: http
+    behavior: classical
+    format: text
+    url: https://ruleset.skk.moe/Clash/non_ip/apple_services.txt
+    path: ./rules/apple-services.txt
+    interval: 86400
+  microsoft-cdn:
+    type: http
+    behavior: classical
+    format: text
+    url: https://ruleset.skk.moe/Clash/non_ip/microsoft_cdn.txt
+    path: ./rules/microsoft-cdn.txt
+    interval: 86400
+  microsoft:
+    type: http
+    behavior: classical
+    format: text
+    url: https://ruleset.skk.moe/Clash/non_ip/microsoft.txt
+    path: ./rules/microsoft.txt
+    interval: 86400
+  download-domain:
+    type: http
+    behavior: domain
+    format: text
+    url: https://ruleset.skk.moe/Clash/domainset/download.txt
+    path: ./rules/download-domain.txt
+    interval: 86400
+  download:
+    type: http
+    behavior: classical
+    format: text
+    url: https://ruleset.skk.moe/Clash/non_ip/download.txt
+    path: ./rules/download.txt
+    interval: 86400
+  global:
+    type: http
+    behavior: classical
+    format: text
+    url: https://ruleset.skk.moe/Clash/non_ip/global.txt
+    path: ./rules/global.txt
+    interval: 86400
+  direct:
+    type: http
+    behavior: classical
+    format: text
+    url: https://ruleset.skk.moe/Clash/non_ip/direct.txt
+    path: ./rules/direct.txt
+    interval: 86400
+  domestic:
+    type: http
+    behavior: classical
+    format: text
+    url: https://ruleset.skk.moe/Clash/non_ip/domestic.txt
+    path: ./rules/domestic.txt
+    interval: 86400
+  cdn-domain:
+    type: http
+    behavior: domain
+    format: text
+    url: https://ruleset.skk.moe/Clash/domainset/cdn.txt
+    path: ./rules/cdn-domain.txt
+    interval: 86400
+  cdn:
+    type: http
+    behavior: classical
+    format: text
+    url: https://ruleset.skk.moe/Clash/non_ip/cdn.txt
+    path: ./rules/cdn.txt
+    interval: 86400
+  lan-ip:
+    type: http
+    behavior: classical
+    format: text
+    url: https://ruleset.skk.moe/Clash/ip/lan.txt
+    path: ./rules/lan-ip.txt
+    interval: 86400
+  reject-ip:
+    type: http
+    behavior: classical
+    format: text
+    url: https://ruleset.skk.moe/Clash/ip/reject.txt
+    path: ./rules/reject-ip.txt
+    interval: 86400
+  ai-ip:
+    type: http
+    behavior: classical
+    format: text
+    url: https://ruleset.skk.moe/Clash/ip/ai.txt
+    path: ./rules/ai-ip.txt
+    interval: 86400
+  stream-ip:
+    type: http
+    behavior: classical
+    format: text
+    url: https://ruleset.skk.moe/Clash/ip/stream.txt
+    path: ./rules/stream-ip.txt
+    interval: 86400
+  telegram-ip:
+    type: http
+    behavior: classical
+    format: text
+    url: https://ruleset.skk.moe/Clash/ip/telegram.txt
+    path: ./rules/telegram-ip.txt
+    interval: 86400
+  telegram-asn:
+    type: http
+    behavior: classical
+    format: text
+    url: https://ruleset.skk.moe/Clash/ip/telegram_asn.txt
+    path: ./rules/telegram-asn.txt
+    interval: 86400
+  download-ip:
+    type: http
+    behavior: classical
+    format: text
+    url: https://ruleset.skk.moe/Clash/ip/download.txt
+    path: ./rules/download-ip.txt
+    interval: 86400
+  neteasemusic-ip:
+    type: http
+    behavior: classical
+    format: text
+    url: https://ruleset.skk.moe/Clash/ip/neteasemusic.txt
+    path: ./rules/neteasemusic-ip.txt
+    interval: 86400
+  cdn-ip:
+    type: http
+    behavior: classical
+    format: text
+    url: https://ruleset.skk.moe/Clash/ip/cdn.txt
+    path: ./rules/cdn-ip.txt
+    interval: 86400
+  apple-services-ip:
+    type: http
+    behavior: classical
+    format: text
+    url: https://ruleset.skk.moe/Clash/ip/apple_services.txt
+    path: ./rules/apple-services-ip.txt
+    interval: 86400
+  domestic-ip:
+    type: http
+    behavior: classical
+    format: text
+    url: https://ruleset.skk.moe/Clash/ip/domestic.txt
+    path: ./rules/domestic-ip.txt
+    interval: 86400
+  china-ip:
+    type: http
+    behavior: ipcidr
+    format: text
+    url: https://ruleset.skk.moe/Clash/ip/china_ip.txt
+    path: ./rules/china-ip.txt
+    interval: 86400
+  china-ipv6:
+    type: http
+    behavior: ipcidr
+    format: text
+    url: https://ruleset.skk.moe/Clash/ip/china_ip_ipv6.txt
+    path: ./rules/china-ipv6.txt
+    interval: 86400
+
+rules:
+  # 明文 DNS 不放行（TUN 的 dns-hijack 会先于规则接管应用的 DNS 查询）。
+  - DST-PORT,53,REJECT
+  # 公司与局域网域名最先处理。
+  # [mihomo] 规则严格按顺序匹配，因此 Stash 版为 pre-matching 写的
+  #          AND/NOT corporate-domains 排除条件不再需要：公司域名已在此处直连。
+  - RULE-SET,corporate-domains,DIRECT
+  - RULE-SET,lan,DIRECT
+  # 拦截：高频重试集合优先使用 REJECT-DROP。
+  - RULE-SET,reject-drop,REJECT-DROP
+  - RULE-SET,reject-domain,REJECT
+  - RULE-SET,reject-extra,REJECT
+  - RULE-SET,reject-phishing,REJECT
+  - RULE-SET,reject,REJECT
+  - RULE-SET,reject-no-drop,REJECT
+  - RULE-SET,awavenue,REJECT
+  # 此集合含 PROCESS-NAME。
+  - RULE-SET,sogouinput,REJECT
+  - RULE-SET,onepassword,DIRECT
+  - RULE-SET,lark,Lark
+  - RULE-SET,ai,AI
+  - RULE-SET,apple-intelligence,AI
+  - RULE-SET,speedtest,测速
+  - RULE-SET,apple-cdn,DIRECT
+  - RULE-SET,apple-cn,DIRECT
+  - RULE-SET,apple-services,Apple
+  - RULE-SET,microsoft-cdn,DIRECT
+  - RULE-SET,microsoft,Microsoft
+  # 日本集合先于美国集合，两者均包含 Hulu Japan。
+  - RULE-SET,stream-jp,流媒体-日本
+  - RULE-SET,stream-us,流媒体-美国
+  - RULE-SET,stream-eu,流媒体-欧洲
+  - RULE-SET,stream-kr,流媒体-韩国
+  # Bilibili 国际版也被香港集合收录，专用策略优先。
+  - RULE-SET,stream-biliintl,流媒体-台湾
+  - RULE-SET,stream-hk,流媒体-香港
+  - RULE-SET,stream-tw,流媒体-台湾
+  - RULE-SET,stream,默认代理
+  - RULE-SET,telegram,默认代理
+  - RULE-SET,download-domain,下载
+  - RULE-SET,download,下载
+  - RULE-SET,direct,DIRECT
+  - RULE-SET,domestic,DIRECT
+  # 服务专用、下载和国内域名优先于通用 CDN。
+  - RULE-SET,cdn-domain,默认代理
+  - RULE-SET,cdn,默认代理
+  - RULE-SET,global,默认代理
+  # 未命中域名规则时，通过国内 DoH 查询真实地址，供后续 IP 规则判断。
+  - RULE-SET,lan-ip,DIRECT
+  # 私有地址优先直连；拦截恶意 IP 时复用已有解析结果。
+  - RULE-SET,reject-ip,REJECT-DROP,no-resolve
+  - RULE-SET,ai-ip,AI,no-resolve
+  - RULE-SET,apple-services-ip,Apple,no-resolve
+  - RULE-SET,stream-ip,默认代理,no-resolve
+  - RULE-SET,telegram-ip,默认代理,no-resolve
+  - RULE-SET,telegram-asn,默认代理,no-resolve
+  - RULE-SET,download-ip,下载,no-resolve
+  - RULE-SET,neteasemusic-ip,DIRECT,no-resolve
+  - RULE-SET,cdn-ip,默认代理,no-resolve
+  - RULE-SET,domestic-ip,DIRECT,no-resolve
+  - RULE-SET,china-ip,DIRECT
+  - RULE-SET,china-ipv6,DIRECT
+  - MATCH,默认代理
